@@ -14,7 +14,7 @@ const createChunks = (words, { chunkSize, overlap }) => {
 }
 
 const chunker = (text, options = {}) => {
-  const { chunkSize = 5, overlap = 2 } = options;
+  const { chunkSize = 30, overlap = 5 } = options;
 
   if (!text || typeof text !== 'string') throw new Error('Text is required for chunking.');
   if (chunkSize <= 0) throw new Error('Chunk size must be a positive number.');

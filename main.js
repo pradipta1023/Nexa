@@ -9,9 +9,12 @@ import Retriever from "./src/Retriever/Retriever.js"
 import PromptBuilder from "./src/PromptBuilder/PromptBuilder.js"
 import RagApplication from "./src/RagApplication/RagApplication.js"
 import CLI from "./frontend/CLI/cli.js"
+import DocumentIngestionService from "./src/IngestionService/DocumentIngestionService.js";
+import PdfExtractor from "./src/PdfExractor/PdfExtractor.js"
+import QueryPipeline from "./src/QueryPipeline/QueryPipeline.js"
 
 const main = async () => {
-  const embeddingService = new OllamaEmbeddingService({ baseUrl: "http://localhost:11435", model: "nomic-embed-text", })
+  const embeddingService = new OllamaEmbeddingService({ baseUrl: "http://127.0.0.1:11435", model: "nomic-embed-text", })
   const chatService = new OllamaChatService({ baseUrl: "http://localhost:11435", model: "qwen3:14b" })
 
   const client = new ChromaClient({
@@ -27,22 +30,21 @@ const main = async () => {
   const retriever = new Retriever({ embeddingService, vectorStore })
   const promptBuilder = new PromptBuilder();
 
-  const ragApplication = new RagApplication({
+  const pdfExtractor = new PdfExtractor();
+
+  const ingestionService = new DocumentIngestionService({
+    pdfExtractor,
     chunker,
     embeddingPipeline,
-    vectorStore,
-    retriever,
-    promptBuilder,
-    chatService,
-    chunkOptions: {
-      chunkSize: 10,
-      overlap: 5,
-    }
+    vectorStore
   });
 
-  const cli = new CLI({ ragApplication });
-
-  await cli.start();
+  await ingestionService.ingestPdf({ filePath: "./public/pdfs/react-handbook.pdf" })
+  console.log("Ingested");
+  
+  const queryPipeline = new QueryPipeline({ retriever, chatService, promptBuilder })
+  const answer = await queryPipeline.ask({ question: "What are hooks in react?", topK: 12 });
+  console.log(answer);
 }
 
 main();

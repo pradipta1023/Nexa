@@ -133,7 +133,7 @@ describe("RagApplication", () => {
 
     const answer = await rag.ask("What is React?");
 
-    expect(answer).toBe("React is a JavaScript library.");
+    expect(answer.answer).toBe("React is a JavaScript library.");
   });
 
   test("should propagate errors from add()", async () => {

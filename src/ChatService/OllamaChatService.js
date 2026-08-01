@@ -25,8 +25,6 @@ class OllamaChatService {
       });
 
       if (!response.ok) {
-        console.log(response);
-
         throw new Error(`Ollama server returned status ${response.status}`);
       }
 

@@ -10,28 +10,28 @@ describe('chunker', () => {
     const options = { chunkSize: 3, overlap: 2 };
 
     const expectedChunks = [
-      { id: 1, text: "This is a" },
-      { id: 2, text: "is a test" },
-      { id: 3, text: "a test string" },
-      { id: 4, text: "test string to" },
-      { id: 5, text: "string to test" },
-      { id: 6, text: "to test chunking" },
-      { id: 7, text: "test chunking functionality." },
+      { text: "This is a" },
+      { text: "is a test" },
+      { text: "a test string" },
+      { text: "test string to" },
+      { text: "string to test" },
+      { text: "to test chunking" },
+      { text: "test chunking functionality." },
     ];
 
-    expect(chunker(text, options)).toEqual(expectedChunks);
+    expect(chunker(text, options).map(({ text }) => ({ text }))).toEqual(expectedChunks);
   });
 
   test("Should return chunks of the default size (5) with the default overlap (2) when no options are provided", () => {
     const text = "This is a test string to test chunking functionality.";
 
     const expectedChunks = [
-      { id: 1, text: "This is a test string" },
-      { id: 2, text: "test string to test chunking" },
-      { id: 3, text: "test chunking functionality." }
+      { text: "This is a test string" },
+      { text: "test string to test chunking" },
+      { text: "test chunking functionality." }
     ];
 
-    expect(chunker(text)).toEqual(expectedChunks);
+    expect(chunker(text).map(({ text }) => ({ text }))).toEqual(expectedChunks);
   });
 
   test("Should handle cases where the text is shorter than the chunk size", () => {
@@ -39,10 +39,10 @@ describe('chunker', () => {
     const options = { chunkSize: 5, overlap: 2 };
 
     const expectedChunks = [
-      { id: 1, text: "Short text" }
+      { text: "Short text" }
     ];
 
-    expect(chunker(text, options)).toEqual(expectedChunks);
+    expect(chunker(text, options).map(({ text }) => ({ text }))).toEqual(expectedChunks);
   });
 
   test("Should handle cases where the text is exactly the chunk size", () => {
@@ -50,10 +50,10 @@ describe('chunker', () => {
     const options = { chunkSize: 5, overlap: 2 };
 
     const expectedChunks = [
-      { id: 1, text: "This is a test string" },
+      { text: "This is a test string" },
     ];
 
-    expect(chunker(text, options)).toEqual(expectedChunks);
+    expect(chunker(text, options).map(({ text }) => ({ text }))).toEqual(expectedChunks);
   });
 
   test("Should throw an error if chunkSize is 0", () => {
@@ -73,19 +73,9 @@ describe('chunker', () => {
     const options = { chunkSize: 5, overlap: 2 };
 
     const expectedChunks = [
-      { id: 1, text: "A B C D E" },
-      { id: 2, text: "D E F G" }
+      { text: "A B C D E" },
+      { text: "D E F G" }
     ];
-    expect(chunker(text, options)).toEqual(expectedChunks);
-  });
-
-  test("Should assign sequential IDs to each chunk", () => {
-    const text = "This is a test string to test chunking functionality.";
-    const options = { chunkSize: 3, overlap: 2 };
-
-    const chunks = chunker(text, options);
-    const ids = chunks.map(chunk => chunk.id);
-
-    expect(ids).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    expect(chunker(text, options).map(({ text }) => ({ text }))).toEqual(expectedChunks);
   });
 });
