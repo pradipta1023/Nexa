@@ -1,0 +1,127 @@
+openapi: 3.0.0
+info:
+  title: RAG Pipeline API
+  version: 1.0.0
+  description: API documentation for the RAG pipeline document ingestion and retrieval.
+servers:
+  - url: /api
+    description: Base API URL
+paths:
+  /ingest/text:
+    post:
+      summary: Ingest plain text
+      description: Chunks, embeds, and stores the provided plain text into the vector database.
+      tags:
+        - Ingestion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - text
+              properties:
+                text:
+                  type: string
+                  description: The plain text to ingest.
+                metadata:
+                  type: object
+                  description: Optional metadata to associate with the text chunks.
+      responses:
+        '201':
+          description: Text successfully ingested
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Text ingested successfully
+                  chunksStored:
+                    type: integer
+                    example: 5
+        '400':
+          description: Bad Request - Missing or invalid text field
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: string
+                    example: "The 'text' field is required and must be a non-empty string."
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: string
+                    example: "An unexpected error occurred during text ingestion."
+  /query:
+    post:
+      summary: Query the RAG pipeline
+      description: Retrieve relevant context and generate an answer for the given question.
+      tags:
+        - Query
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - question
+              properties:
+                question:
+                  type: string
+                  description: The question to ask the RAG pipeline.
+                topK:
+                  type: integer
+                  description: Number of context chunks to retrieve.
+                  default: 10
+                  minimum: 1
+      responses:
+        '200':
+          description: Answer successfully generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  answer:
+                    type: string
+                    example: "React hooks are functions that let you hook into React state..."
+        '400':
+          description: Bad Request - Missing or invalid fields
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "The 'question' field is required and must be a non-empty string."
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "An unexpected error occurred during the query."

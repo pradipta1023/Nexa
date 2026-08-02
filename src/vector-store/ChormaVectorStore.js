@@ -13,16 +13,26 @@ class ChromaVectorStore {
     const embeddings = [];
     const documents = [];
     const metadatas = [];
+    let hasMetadata = false;
 
     for (const { id, embedding, text, metadata } of vectors) {
       ids.push(id);
       embeddings.push(embedding);
       documents.push(text);
-      if (metadata) metadatas.push(metadata);
-      else metadatas.push({});
+      if (metadata && Object.keys(metadata).length > 0) {
+        hasMetadata = true;
+        metadatas.push(metadata);
+      } else {
+        metadatas.push({ _empty: true });
+      }
     }
 
-    await this.#collection.add({ ids, embeddings, documents, metadatas })
+    const payload = { ids, embeddings, documents };
+    if (hasMetadata) {
+        payload.metadatas = metadatas;
+    }
+
+    await this.#collection.add(payload)
   }
 
   async search({ queryEmbedding, topK: nResults }) {
