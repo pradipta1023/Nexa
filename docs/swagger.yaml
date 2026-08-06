@@ -71,6 +71,62 @@ paths:
                   error:
                     type: string
                     example: "An unexpected error occurred during text ingestion."
+  /ingest/pdf:
+    post:
+      summary: Ingest PDF document
+      description: Extracts, chunks, embeds, and stores the provided PDF file into the vector database.
+      tags:
+        - Ingestion
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - pdf
+              properties:
+                pdf:
+                  type: string
+                  format: binary
+                  description: The PDF file to ingest.
+                metadata:
+                  type: string
+                  description: Optional metadata to associate with the PDF chunks, passed as a JSON string.
+      responses:
+        '201':
+          description: PDF successfully ingested
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "PDF ingested successfully."
+                  chunksStored:
+                    type: integer
+                    example: 248
+        '400':
+          description: Bad Request - Missing file or invalid JSON metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "A valid PDF file is required."
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "An unexpected error occurred during PDF ingestion."
   /query:
     post:
       summary: Query the RAG pipeline

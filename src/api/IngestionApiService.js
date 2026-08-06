@@ -17,4 +17,17 @@ export default class IngestionApiService {
             chunksStored: result.chunksStored
         };
     }
+
+    async ingestPdf({ pdfData, metadata }) {
+        const payload = { pdfData };
+        if (metadata && Object.keys(metadata).length > 0) {
+            payload.metadata = metadata;
+        }
+        
+        const result = await this.documentIngestionService.ingestPdf(payload);
+        
+        return {
+            chunksStored: result.chunksStored
+        };
+    }
 }

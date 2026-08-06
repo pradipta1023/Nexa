@@ -1,4 +1,5 @@
 import * as pdfJsLib from "pdfjs-dist/legacy/build/pdf.mjs";
+import path from 'path';
 
 class PdfExtractor {
 
@@ -9,10 +10,12 @@ class PdfExtractor {
 
     return { text, pageNumber };
   }
-  async extract({ fileName }) {
-    if (!fileName) throw new Error("Filename must be provided");
+  async extract({ fileName, pdfData }) {
+    if (!fileName && !pdfData) throw new Error("Filename or pdfData must be provided");
     try {
-      const loadingTask = pdfJsLib.getDocument({ url: fileName });
+      const source = pdfData ? { data: new Uint8Array(pdfData) } : { url: fileName };
+      source.standardFontDataUrl = path.join(process.cwd(), 'node_modules', 'pdfjs-dist', 'standard_fonts') + '/';
+      const loadingTask = pdfJsLib.getDocument(source);
       const pdf = await loadingTask.promise;
       const pages = [];
 

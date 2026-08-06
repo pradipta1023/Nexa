@@ -12,6 +12,7 @@
     "chroma": "^0.0.1",
     "chromadb": "^3.5.0",
     "express": "^5.2.1",
+    "multer": "^2.2.0",
     "pdfjs-dist": "^6.1.200",
     "swagger-ui-express": "^5.0.1",
     "uuid": "^14.0.1",

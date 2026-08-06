@@ -21,6 +21,7 @@ class DocumentIngestionService {
     const allChunks = [];
 
     for (const item of items) {
+      if (!item.text || item.text.trim() === '') continue;
       const chunks = this.#chunker(item.text);
       for (const chunk of chunks) {
         allChunks.push({
@@ -42,8 +43,8 @@ class DocumentIngestionService {
     return await this.#processData([{ text, metadata }]);
   }
 
-  async ingestPdf({ filePath, metadata }) {
-    const pages = await this.#pdfExtractor.extract({ fileName: filePath });
+  async ingestPdf({ filePath, pdfData, metadata }) {
+    const pages = await this.#pdfExtractor.extract({ fileName: filePath, pdfData });
 
     const items = pages.map(page => ({
       text: page.text,
