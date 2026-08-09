@@ -15,6 +15,24 @@ services:
     volumes:
       - ollama-data:/root/.ollama
 
+  ollama-init:
+    image: curlimages/curl:latest
+    container_name: ollama-init
+    depends_on:
+      - ollama
+    command: >
+      sh -c "
+        echo 'Waiting for Ollama to be available...'
+        while ! curl -s http://ollama:11434/api/tags > /dev/null; do sleep 2; done;
+        echo 'Pulling nomic-embed-text...'
+        curl -s -X POST http://ollama:11434/api/pull -d '{\"name\":\"nomic-embed-text\"}'
+        echo 'Pulling qwen3:8b...'
+        curl -s -X POST http://ollama:11434/api/pull -d '{\"name\":\"qwen3:8b\"}'
+        echo 'Pulling qwen3:14b...'
+        curl -s -X POST http://ollama:11434/api/pull -d '{\"name\":\"qwen3:14b\"}'
+        echo 'Models pulled successfully!'
+      "
+
 volumes:
   chroma-data:
   ollama-data:
