@@ -1,11 +1,14 @@
+import { DEFAULT_PROFILE } from '../profiles/constants.js';
+
 export default class QueryController {
-    constructor({ queryApiService }) {
+    constructor({ queryApiService, profileRegistry }) {
         this.queryApiService = queryApiService;
+        this.profileRegistry = profileRegistry;
     }
 
     ask = async (req, res) => {
         try {
-            const { question, topK } = req.body;
+            const { question, profile } = req.body;
 
             // 1. Validate 'question'
             if (!question || typeof question !== 'string' || question.trim() === '') {
@@ -14,27 +17,33 @@ export default class QueryController {
                 });
             }
 
-            // 2. Validate 'topK' (Optional, defaults to 10)
-            let validTopK = 10;
-            if (topK !== undefined) {
-                if (typeof topK !== 'number' || !Number.isInteger(topK) || topK <= 0) {
-                    return res.status(400).json({
-                        error: "The 'topK' field must be a positive integer."
-                    });
-                }
-                validTopK = topK;
+            // 2. Validate 'profile'
+            const profileName = profile || DEFAULT_PROFILE;
+            if (!this.profileRegistry.isValid(profileName)) {
+                return res.status(400).json({
+                    error: `Invalid profile provided: ${profile}`
+                });
             }
 
-            // 3. Call the API service
-            const result = await this.queryApiService.ask({ 
-                question, 
-                topK: validTopK 
-            });
+            // 3. Call the API service depending on streaming config
+            const config = this.profileRegistry.get(profileName);
+            
+            if (config.streaming) {
+                res.setHeader('Content-Type', 'text/event-stream');
+                res.setHeader('Cache-Control', 'no-cache');
+                res.setHeader('Connection', 'keep-alive');
 
-            // 4. Return the HTTP response (Answer only)
-            return res.status(200).json({
-                answer: result.answer
-            });
+                const stream = await this.queryApiService.askStream({ question, profileName });
+                
+                for await (const token of stream) {
+                    res.write(`data: ${JSON.stringify({ token })}\n\n`);
+                }
+                res.write(`data: [DONE]\n\n`);
+                return res.end();
+            } else {
+                const result = await this.queryApiService.ask({ question, profileName });
+                return res.status(200).json({ answer: result.answer });
+            }
 
         } catch (error) {
             console.error("Error during query execution:", error);
@@ -44,3 +53,4 @@ export default class QueryController {
         }
     }
 }
+

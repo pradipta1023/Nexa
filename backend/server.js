@@ -16,6 +16,7 @@ import QueryPipeline from "./src/QueryPipeline/QueryPipeline.js";
 import QueryApiService from "./src/api/QueryApiService.js";
 import QueryController from "./src/controllers/QueryController.js";
 import createQueryRoutes from "./src/routes/queryRoutes.js";
+import ProfileRegistry from "./src/profiles/ProfileRegistry.js";
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 import path from 'path';
@@ -57,9 +58,10 @@ const initializeDependencies = async () => {
   const retriever = new Retriever({ embeddingService, vectorStore });
   const promptBuilder = new PromptBuilder();
   const queryPipeline = new QueryPipeline({ retriever, chatService, promptBuilder });
+  const profileRegistry = new ProfileRegistry();
   
-  const queryApiService = new QueryApiService({ queryPipeline });
-  const queryController = new QueryController({ queryApiService });
+  const queryApiService = new QueryApiService({ queryPipeline, profileRegistry });
+  const queryController = new QueryController({ queryApiService, profileRegistry });
 
   return { ingestionService, ingestionController, queryController };
 };
