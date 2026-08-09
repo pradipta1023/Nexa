@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { queryDocs } from '../api/queryApi';
+import { queryDocsStream } from '../api/queryApi';
 import StatusAlert from './StatusAlert';
 
 const QueryCard = () => {
   const [question, setQuestion] = useState('');
-  const [topK, setTopK] = useState('');
-  const [status, setStatus] = useState('idle'); // idle, loading, success, error
+  const [profile, setProfile] = useState('flash');
+  const [status, setStatus] = useState('idle'); // idle, loading, streaming, success, error
   const [message, setMessage] = useState('');
   const [answer, setAnswer] = useState('');
 
@@ -17,26 +17,31 @@ const QueryCard = () => {
     }
 
     setStatus('loading');
-    setMessage('Searching for an answer...');
-    setAnswer(''); // clear any previous answer
+    setMessage('Connecting to knowledge base...');
+    setAnswer(''); 
 
-    try {
-      const result = await queryDocs(question, topK);
-      
+    const handleToken = (token) => {
+      setStatus('streaming');
+      setMessage(''); // Clear loading message as soon as streaming starts
+      setAnswer((prev) => prev + token);
+    };
+
+    const handleStreamDone = () => {
       setStatus('success');
-      setMessage(''); // Clear message on success to focus on the answer
-      
-      // Set the answer from the expected response format { answer: "..." }
-      setAnswer(result.answer || 'No answer returned.');
-    } catch (err) {
+    };
+
+    const handleStreamError = (error) => {
       setStatus('error');
-      setMessage(
-        err.response?.data?.message || 
-        err.response?.data?.error || 
-        err.message || 
-        'An error occurred while querying.'
-      );
-    }
+      setMessage(error.message || 'An error occurred while querying.');
+    };
+
+    queryDocsStream(
+      question,
+      profile,
+      handleToken,
+      handleStreamDone,
+      handleStreamError
+    );
   };
 
   return (
@@ -54,37 +59,37 @@ const QueryCard = () => {
             placeholder="Ask a question about your documents..."
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
-            disabled={status === 'loading'}
+            disabled={status === 'loading' || status === 'streaming'}
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Top K (Optional)
+            Profile
           </label>
-          <input
-            type="number"
-            min="1"
+          <select
             className="w-full border border-gray-300 rounded-md p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-            placeholder="e.g., 5"
-            value={topK}
-            onChange={(e) => setTopK(e.target.value)}
-            disabled={status === 'loading'}
-          />
+            value={profile}
+            onChange={(e) => setProfile(e.target.value)}
+            disabled={status === 'loading' || status === 'streaming'}
+          >
+            <option value="flash">Flash (Fast)</option>
+            <option value="thinking">Thinking (Deep Reasoning)</option>
+          </select>
         </div>
 
         <button
           onClick={handleQuery}
-          disabled={status === 'loading'}
+          disabled={status === 'loading' || status === 'streaming'}
           className="w-full bg-blue-600 text-white font-medium py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors"
         >
-          {status === 'loading' ? 'Asking...' : 'Ask'}
+          {status === 'loading' ? 'Connecting...' : status === 'streaming' ? 'Generating...' : 'Ask'}
         </button>
 
-        <StatusAlert status={status} message={message} />
+        <StatusAlert status={status === 'streaming' ? 'idle' : status} message={message} />
 
         {/* Generated Answer Display */}
-        {answer && status !== 'loading' && (
+        {answer && (
           <div className="mt-6 border-t border-gray-100 pt-6">
             <h3 className="text-sm font-semibold text-gray-500 mb-2 uppercase tracking-wide">Answer</h3>
             <div className="bg-gray-50 border border-gray-200 rounded-md p-4 text-gray-800 whitespace-pre-wrap leading-relaxed">
