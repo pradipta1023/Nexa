@@ -117,7 +117,7 @@ const IngestionModal = ({ open, onClose }) => {
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
       <DialogTitle>Add Knowledge to RAG</DialogTitle>
       <DialogContent dividers>
-        <Tabs value={tab} onChange={handleTabChange} variant="fullWidth">
+        <Tabs value={tab} onChange={handleTabChange} variant="fullWidth" textColor="inherit" indicatorColor="primary">
           <Tab label="Text" />
           <Tab label="PDF File" />
         </Tabs>
@@ -160,7 +160,7 @@ const IngestionModal = ({ open, onClose }) => {
             <Typography variant="caption" color="text.secondary">Supports .pdf</Typography>
           </Box>
           {file && (
-            <Box sx={{ display: 'flex', alignItems: 'center', p: 2, bgcolor: 'action.selected', borderRadius: 1, mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', p: 2, bgcolor: 'background.default', border: 1, borderColor: 'divider', borderRadius: 1, mb: 2 }}>
               <InsertDriveFileIcon color="primary" sx={{ mr: 2 }} />
               <Typography variant="body2" sx={{ flexGrow: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {file.name}
@@ -188,7 +188,7 @@ const IngestionModal = ({ open, onClose }) => {
         {status === 'error' && <Alert severity="error" sx={{ mb: 2 }}>{message}</Alert>}
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose} disabled={status === 'loading'}>Cancel</Button>
+        <Button onClick={handleClose} disabled={status === 'loading'} color="inherit">Cancel</Button>
         <Button onClick={handleSubmit} disabled={status === 'loading'} variant="contained" disableElevation>
           {status === 'loading' ? <CircularProgress size={24} /> : 'Upload'}
         </Button>
