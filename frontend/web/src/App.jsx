@@ -13,6 +13,8 @@ import Container from '@mui/material/Container';
 import { useAppTheme } from './theme/ThemeContext';
 import ProfileSelector from './components/ProfileSelector';
 import EmptyState from './components/EmptyState';
+import IngestionModal from './components/IngestionModal';
+import MessageBubble from './components/MessageBubble';
 
 const App = () => {
   const { mode, toggleColorMode } = useAppTheme();
@@ -22,6 +24,7 @@ const App = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [status, setStatus] = useState('idle'); // idle, loading, streaming, success, error
+  const [isIngestionOpen, setIsIngestionOpen] = useState(false);
 
   // Persist Profile
   useEffect(() => {
@@ -53,7 +56,7 @@ const App = () => {
             <Button startIcon={<ChatBubbleOutlineIcon />} variant="outlined" size="small" color="inherit" onClick={handleNewChat}>
               New Chat
             </Button>
-            <Button startIcon={<AddCircleOutlineIcon />} variant="contained" size="small" disableElevation>
+            <Button startIcon={<AddCircleOutlineIcon />} variant="contained" size="small" disableElevation onClick={() => setIsIngestionOpen(true)}>
               Add Knowledge
             </Button>
             <IconButton onClick={toggleColorMode} color="inherit">
@@ -63,15 +66,24 @@ const App = () => {
         </Toolbar>
       </AppBar>
 
+      <IngestionModal open={isIngestionOpen} onClose={() => setIsIngestionOpen(false)} />
+
       {/* Main Chat Area Placeholder */}
       <Box sx={{ flexGrow: 1, overflowY: 'auto', p: 3, display: 'flex', flexDirection: 'column' }}>
         <Container maxWidth="md" sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
           {messages.length === 0 ? (
             <EmptyState onExampleClick={handleExampleClick} />
           ) : (
-            <Typography variant="h6" color="text.secondary" align="center" sx={{ mt: 8, opacity: 0.5 }}>
-              Chat history will render here...
-            </Typography>
+            <Box sx={{ width: '100%', pb: 2 }}>
+              {messages.map((msg, index) => (
+                <MessageBubble 
+                  key={index} 
+                  message={msg} 
+                  isLast={index === messages.length - 1} 
+                  onRegenerate={() => console.log('Regenerate clicked')} 
+                />
+              ))}
+            </Box>
           )}
         </Container>
       </Box>

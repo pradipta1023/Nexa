@@ -8,7 +8,7 @@ export const queryDocs = async (question, profile) => {
   return response.data;
 };
 
-export const queryDocsStream = async (question, profile, onToken, onDone, onError) => {
+export const queryDocsStream = async (question, profile, onToken, onDone, onError, signal) => {
   const payload = { question };
   if (profile) payload.profile = profile;
   
@@ -19,6 +19,7 @@ export const queryDocsStream = async (question, profile, onToken, onDone, onErro
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
+      signal,
     });
 
     if (!response.ok) {
