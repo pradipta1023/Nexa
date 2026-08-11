@@ -13,7 +13,7 @@ import Container from '@mui/material/Container';
 import TextField from '@mui/material/TextField';
 import InputAdornment from '@mui/material/InputAdornment';
 import SendIcon from '@mui/icons-material/Send';
-import StopCircleIcon from '@mui/icons-material/StopCircle';
+import StopIcon from '@mui/icons-material/Stop';
 import { useAppTheme } from './theme/ThemeContext';
 import ProfileSelector from './components/ProfileSelector';
 import EmptyState from './components/EmptyState';
@@ -210,26 +210,29 @@ const App = () => {
                   handleSend();
                 }
               }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    {status === 'streaming' || status === 'loading' ? (
-                      <IconButton color="error" onClick={handleStop} edge="end">
-                        <StopCircleIcon />
-                      </IconButton>
-                    ) : (
-                      <IconButton 
-                        color="primary" 
-                        onClick={handleSend} 
-                        disabled={!input.trim()} 
-                        edge="end"
-                      >
-                        <SendIcon />
-                      </IconButton>
-                    )}
-                  </InputAdornment>
-                ),
-                sx: { borderRadius: 4, py: 1.5, px: 2 }
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      {status === 'streaming' || status === 'loading' ? (
+                        <IconButton color="error" onClick={handleStop} edge="end" sx={{ mr: 0.5 }}>
+                          <StopIcon />
+                        </IconButton>
+                      ) : (
+                        <IconButton 
+                          color="primary" 
+                          onClick={handleSend} 
+                          disabled={!input.trim()} 
+                          edge="end"
+                          sx={{ mr: 0.5 }}
+                        >
+                          <SendIcon />
+                        </IconButton>
+                      )}
+                    </InputAdornment>
+                  ),
+                  sx: { borderRadius: 4 }
+                }
               }}
             />
          </Container>

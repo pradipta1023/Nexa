@@ -6,10 +6,10 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 
 const EmptyState = ({ onExampleClick }) => {
   const examples = [
-    "What are the main concepts covered in the documents?",
-    "Can you summarize the most recent ingestions?",
-    "Explain the architecture of our current system.",
-    "What are the key performance metrics discussed?"
+    "What is Retrieval-Augmented Generation (RAG)?",
+    "Explain the architecture of a modern web application.",
+    "What are the main differences between SQL and NoSQL?",
+    "Can you summarize the key benefits of using React?"
   ];
 
   return (

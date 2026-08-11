@@ -7,7 +7,7 @@ export const ingestText = async (text, metadata) => {
 
 export const ingestPdf = async (file, metadata) => {
   const formData = new FormData();
-  formData.append('file', file);
+  formData.append('pdf', file);
   
   if (metadata) {
     // metadata is already parsed as an object by validateJson before calling API

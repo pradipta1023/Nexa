@@ -15,7 +15,7 @@ describe("PdfExtractor", () => {
 
   test("should throw when file name is not provided", async () => {
     await expect(pdfExtractor.extract({}))
-      .rejects.toThrow("Filename must be provided");
+      .rejects.toThrow("Filename or pdfData must be provided");
   });
 
   test("should extract text from a single page pdf", async () => {
@@ -38,7 +38,7 @@ describe("PdfExtractor", () => {
 
     const result = await pdfExtractor.extract({ fileName: "./react.pdf", });
 
-    expect(pdfJsLib.getDocument).toHaveBeenCalledWith({ url: "./react.pdf", });
+    expect(pdfJsLib.getDocument).toHaveBeenCalledWith(expect.objectContaining({ url: "./react.pdf" }));
 
     expect(result).toEqual([{ pageNumber: 1, text: "React \n Hooks", },]);
   });

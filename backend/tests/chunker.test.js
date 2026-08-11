@@ -22,13 +22,11 @@ describe('chunker', () => {
     expect(chunker(text, options).map(({ text }) => ({ text }))).toEqual(expectedChunks);
   });
 
-  test("Should return chunks of the default size (5) with the default overlap (2) when no options are provided", () => {
+  test("Should return a single chunk for short text when no options are provided (using default chunkSize 70)", () => {
     const text = "This is a test string to test chunking functionality.";
 
     const expectedChunks = [
-      { text: "This is a test string" },
-      { text: "test string to test chunking" },
-      { text: "test chunking functionality." }
+      { text: "This is a test string to test chunking functionality." }
     ];
 
     expect(chunker(text).map(({ text }) => ({ text }))).toEqual(expectedChunks);
