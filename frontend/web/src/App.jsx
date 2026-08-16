@@ -20,11 +20,7 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import SendIcon from '@mui/icons-material/Send';
 import StopIcon from '@mui/icons-material/Stop';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogActions from '@mui/material/DialogActions';
+import Popover from '@mui/material/Popover';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 import { useAppTheme } from './theme/ThemeContext';
@@ -46,7 +42,7 @@ const App = () => {
   const [status, setStatus] = useState('idle'); // idle, loading, streaming, success, error
   const [isIngestionOpen, setIsIngestionOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteAnchorEl, setDeleteAnchorEl] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null); // 'all' or conversation.id
 
   const abortControllerRef = useRef(null);
@@ -95,9 +91,9 @@ const App = () => {
     setIsSidebarOpen(false);
   };
 
-  const requestDelete = (target) => {
+  const requestDelete = (event, target) => {
     setDeleteTarget(target);
-    setDeleteDialogOpen(true);
+    setDeleteAnchorEl(event.currentTarget);
   };
 
   const confirmDelete = () => {
@@ -115,7 +111,7 @@ const App = () => {
         handleNewChat();
       }
     }
-    setDeleteDialogOpen(false);
+    setDeleteAnchorEl(null);
     setDeleteTarget(null);
   };
 
@@ -257,12 +253,18 @@ const App = () => {
       <Drawer anchor="left" open={isSidebarOpen} onClose={() => setIsSidebarOpen(false)}>
         <Box sx={{ width: 280, p: 2, display: 'flex', flexDirection: 'column', height: '100%' }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6">Chat History</Typography>
-            <Box>
-              <IconButton size="small" onClick={() => requestDelete('all')} disabled={conversations.length === 0} title="Clear All History">
-                <DeleteSweepIcon fontSize="small" />
-              </IconButton>
-              <Button size="small" variant="outlined" onClick={handleNewChat} sx={{ ml: 1 }}>New</Button>
+            <Typography variant="h6" sx={{ fontSize: '1.1rem', fontWeight: 600 }}>History</Typography>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button 
+                size="small" 
+                variant="text" 
+                color="error" 
+                onClick={(e) => requestDelete(e, 'all')} 
+                disabled={conversations.length === 0}
+                sx={{ minWidth: 0, px: 1, textTransform: 'none' }}
+              >
+                Clear All
+              </Button>
             </Box>
           </Box>
           <List sx={{ flexGrow: 1, overflowY: 'auto' }}>
@@ -271,7 +273,7 @@ const App = () => {
                 key={c.id} 
                 disablePadding
                 secondaryAction={
-                  <IconButton edge="end" aria-label="delete" size="small" onClick={() => requestDelete(c.id)}>
+                  <IconButton edge="end" aria-label="delete" size="small" onClick={(e) => requestDelete(e, c.id)}>
                     <DeleteIcon fontSize="small" />
                   </IconButton>
                 }
@@ -356,21 +358,32 @@ const App = () => {
          </Container>
       </Box>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Delete Chat</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
+      {/* Delete Confirmation Popover */}
+      <Popover
+        open={Boolean(deleteAnchorEl)}
+        anchorEl={deleteAnchorEl}
+        onClose={() => setDeleteAnchorEl(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'center' }}
+        PaperProps={{ sx: { borderRadius: 4, mt: 1, boxShadow: '0 8px 32px rgba(0,0,0,0.12)' } }}
+      >
+        <Box sx={{ minWidth: 300, maxWidth: 360, p: 2 }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, mb: 1.5, fontSize: '1.25rem' }}>
+            Delete Chat
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 4, lineHeight: 1.5 }}>
             Are you sure you want to delete {deleteTarget === 'all' ? 'all chat history' : 'this chat'}? This action cannot be undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-          <Button onClick={confirmDelete} color="error" autoFocus>
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
+          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+            <Button onClick={() => setDeleteAnchorEl(null)} color="inherit" sx={{ textTransform: 'none', fontWeight: 600, px: 2, py: 1 }}>
+              Cancel
+            </Button>
+            <Button onClick={confirmDelete} color="error" variant="contained" disableElevation sx={{ textTransform: 'none', fontWeight: 600, px: 3, py: 1 }}>
+              Delete
+            </Button>
+          </Box>
+        </Box>
+      </Popover>
     </Box>
   );
 };
