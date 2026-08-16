@@ -14,7 +14,7 @@ import Retriever from "./src/Retriever/Retriever.js";
 import PromptBuilder from "./src/PromptBuilder/PromptBuilder.js";
 import ContextBuilder from "./src/PromptBuilder/ContextBuilder.js";
 import Tokenizer from "./src/Tokenizer/Tokenizer.js";
-import InMemoryConversationStore from "./src/Conversation/InMemoryConversationStore.js";
+import SqliteConversationStore from "./src/Conversation/SqliteConversationStore.js";
 import ConversationIndexer from "./src/Conversation/ConversationIndexer.js";
 import ConversationRetriever from "./src/Conversation/ConversationRetriever.js";
 import ConversationSummarizer from "./src/Conversation/ConversationSummarizer.js";
@@ -71,7 +71,8 @@ const initializeDependencies = async () => {
   const contextBuilder = new ContextBuilder({ tokenizer });
   const promptBuilder = new PromptBuilder({ contextBuilder });
   
-  const conversationStore = new InMemoryConversationStore();
+  const dbPath = path.join(__dirname, 'conversations.sqlite');
+  const conversationStore = new SqliteConversationStore(dbPath);
   const conversationIndexer = new ConversationIndexer({ embeddingService, conversationMemoryStore: memoryVectorStore });
   const conversationRetriever = new ConversationRetriever({ embeddingService, conversationMemoryStore: memoryVectorStore });
   const conversationSummarizer = new ConversationSummarizer({ 
