@@ -12,6 +12,12 @@ import createIngestionRoutes from "./src/routes/ingestionRoutes.js";
 import OllamaChatService from "./src/ChatService/OllamaChatService.js";
 import Retriever from "./src/Retriever/Retriever.js";
 import PromptBuilder from "./src/PromptBuilder/PromptBuilder.js";
+import ContextBuilder from "./src/PromptBuilder/ContextBuilder.js";
+import Tokenizer from "./src/Tokenizer/Tokenizer.js";
+import InMemoryConversationStore from "./src/Conversation/InMemoryConversationStore.js";
+import ConversationIndexer from "./src/Conversation/ConversationIndexer.js";
+import ConversationRetriever from "./src/Conversation/ConversationRetriever.js";
+import ConversationSummarizer from "./src/Conversation/ConversationSummarizer.js";
 import QueryPipeline from "./src/QueryPipeline/QueryPipeline.js";
 import QueryApiService from "./src/api/QueryApiService.js";
 import QueryController from "./src/controllers/QueryController.js";
@@ -40,6 +46,9 @@ const initializeDependencies = async () => {
   });
   const collection = await client.getOrCreateCollection({ name: "test", embeddingFunction: null });
   const vectorStore = new ChromaVectorStore({ collection });
+
+  const memoryCollection = await client.getOrCreateCollection({ name: "memory", embeddingFunction: null });
+  const memoryVectorStore = new ChromaVectorStore({ collection: memoryCollection });
   
   const embeddingPipeline = new EmbeddingPipeline({ embeddingService });
   const pdfExtractor = new PdfExtractor();
@@ -56,12 +65,44 @@ const initializeDependencies = async () => {
 
   const chatService = new OllamaChatService({ baseUrl: "http://localhost:11435", model: "qwen3:14b" });
   const retriever = new Retriever({ embeddingService, vectorStore });
-  const promptBuilder = new PromptBuilder();
-  const queryPipeline = new QueryPipeline({ retriever, chatService, promptBuilder });
-  const profileRegistry = new ProfileRegistry();
   
-  const queryApiService = new QueryApiService({ queryPipeline, profileRegistry });
-  const queryController = new QueryController({ queryApiService, profileRegistry });
+  // -- Memory System --
+  const tokenizer = new Tokenizer();
+  const contextBuilder = new ContextBuilder({ tokenizer });
+  const promptBuilder = new PromptBuilder({ contextBuilder });
+  
+  const conversationStore = new InMemoryConversationStore();
+  const conversationIndexer = new ConversationIndexer({ embeddingService, conversationMemoryStore: memoryVectorStore });
+  const conversationRetriever = new ConversationRetriever({ embeddingService, conversationMemoryStore: memoryVectorStore });
+  const conversationSummarizer = new ConversationSummarizer({ 
+      conversationStore, 
+      conversationIndexer, 
+      chatService 
+  });
+  // ------------------
+
+  const queryPipeline = new QueryPipeline({ 
+      retriever, 
+      chatService, 
+      promptBuilder,
+      conversationRetriever,
+      conversationStore
+  });
+  
+  const profileRegistry = new ProfileRegistry();
+  const queryApiService = new QueryApiService({ 
+      queryPipeline, 
+      profileRegistry,
+      conversationStore,
+      conversationIndexer,
+      conversationSummarizer,
+      tokenizer
+  });
+  
+  const queryController = new QueryController({ 
+      queryApiService, 
+      profileRegistry
+  });
 
   return { ingestionService, ingestionController, queryController };
 };

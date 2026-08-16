@@ -141,14 +141,21 @@ paths:
               type: object
               required:
                 - question
+                - conversationId
               properties:
                 question:
                   type: string
                   description: The question to ask the RAG pipeline.
+                conversationId:
+                  type: string
+                  description: Unique identifier for the conversation session to maintain context.
+                profile:
+                  type: string
+                  description: The execution profile to use (e.g. flash, standard, complex).
+                  default: "flash"
                 topK:
                   type: integer
-                  description: Number of context chunks to retrieve.
-                  default: 10
+                  description: Number of context chunks to retrieve (override).
                   minimum: 1
       responses:
         '200':

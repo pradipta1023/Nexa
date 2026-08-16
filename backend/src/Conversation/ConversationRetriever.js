@@ -43,7 +43,7 @@ class ConversationRetriever {
     return this.#conversationMemoryStore.search({
       queryEmbedding,
       topK,
-      conversationId
+      where: { conversationId: { $eq: conversationId } }
     });
   }
 }

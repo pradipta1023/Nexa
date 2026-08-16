@@ -1,25 +1,9 @@
-class PromptBuilder {
-  #contextBuilder;
+import OllamaChatService from "./src/ChatService/OllamaChatService.js";
 
-  constructor({ contextBuilder }) {
-    this.#contextBuilder = contextBuilder;
-  }
-
-  build({ question, documentChunks = [], summary = null, conversationChunks = [], maxTokens = 2000 }) {
-    const context = this.#contextBuilder.buildContext({
-      documentChunks,
-      summary,
-      conversationChunks,
-      maxTokens,
-    });
-    console.log("Built context:", context);
-
-    if (!context) {
-      throw new Error("Cannot provide answer as there's no context");
-    }
-
-    return `
-You are a helpful AI assistant.
+async function run() {
+  const chatService = new OllamaChatService({ baseUrl: "http://127.0.0.1:11435", model: "qwen3:14b" });
+  
+  const prompt = `You are a helpful AI assistant.
 
 You have been provided with context that may include retrieved knowledge documents, a summary of the conversation, and recent conversation history.
 
@@ -29,15 +13,25 @@ You have been provided with context that may include retrieved knowledge documen
 - If the required information for the active topic is not in the context, you MUST say so. Do NOT use your internal knowledge under any circumstances.
 
 --- CONTEXT ---
-${context}
+Document Context:
+Props can be passed as attributes to the component...
 ---------------
 
 Question:
-${question}
+what are props in React?
 
-Answer:
-    `.trim();
+Answer:`;
+
+  const stream = chatService.generateStream({ prompt, model: "qwen3:14b", temperature: 0.1 });
+  
+  try {
+    for await (const chunk of stream) {
+      process.stdout.write(chunk);
+    }
+    console.log("\nDone");
+  } catch (e) {
+    console.log("Error in stream:", e);
   }
 }
 
-export default PromptBuilder;
+run().catch(console.error);

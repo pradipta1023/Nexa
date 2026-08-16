@@ -1,33 +1,60 @@
-import React from 'react';
-import ToggleButton from '@mui/material/ToggleButton';
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import React, { useState } from 'react';
+import Button from '@mui/material/Button';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
 import BoltIcon from '@mui/icons-material/Bolt';
 import PsychologyIcon from '@mui/icons-material/Psychology';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 
 const ProfileSelector = ({ profile, setProfile }) => {
-  const handleChange = (event, newProfile) => {
-    if (newProfile !== null) {
-      setProfile(newProfile);
-    }
+  const [anchorEl, setAnchorEl] = useState(null);
+  
+  const handleClick = (event) => setAnchorEl(event.currentTarget);
+  const handleClose = (newProfile) => {
+    setAnchorEl(null);
+    if (newProfile) setProfile(newProfile);
   };
 
+  const isFlash = profile === 'flash';
+
   return (
-    <ToggleButtonGroup
-      color="primary"
-      value={profile}
-      exclusive
-      onChange={handleChange}
-      aria-label="Profile"
-      size="small"
-      sx={{ height: 36 }}
-    >
-      <ToggleButton value="flash" aria-label="Flash" sx={{ px: 2, textTransform: 'none', fontWeight: 500 }}>
-        <BoltIcon fontSize="small" sx={{ mr: 0.5 }} /> Flash
-      </ToggleButton>
-      <ToggleButton value="thinking" aria-label="Thinking" sx={{ px: 2, textTransform: 'none', fontWeight: 500 }}>
-        <PsychologyIcon fontSize="small" sx={{ mr: 0.5 }} /> Thinking
-      </ToggleButton>
-    </ToggleButtonGroup>
+    <>
+      <Button
+        variant="text"
+        size="small"
+        onClick={handleClick}
+        endIcon={<KeyboardArrowDownIcon sx={{ ml: -0.5 }} />}
+        sx={{ 
+          textTransform: 'none', 
+          color: 'text.secondary',
+          borderRadius: 2,
+          px: 1,
+          mr: 1,
+          '&:hover': { backgroundColor: 'action.hover' }
+        }}
+      >
+        {isFlash ? <BoltIcon fontSize="small" sx={{ mr: 0.5 }} /> : <PsychologyIcon fontSize="small" sx={{ mr: 0.5 }} />}
+        {isFlash ? 'Flash' : 'Thinking'}
+      </Button>
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={() => handleClose(null)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        PaperProps={{
+          elevation: 3,
+          sx: { mt: -1, borderRadius: 2, minWidth: 150 }
+        }}
+      >
+        <MenuItem onClick={() => handleClose('flash')} selected={profile === 'flash'}>
+          <BoltIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} /> Flash
+        </MenuItem>
+        <MenuItem onClick={() => handleClose('thinking')} selected={profile === 'thinking'}>
+          <PsychologyIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} /> Thinking
+        </MenuItem>
+      </Menu>
+    </>
   );
 };
 

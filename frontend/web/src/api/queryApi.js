@@ -1,15 +1,15 @@
 import apiClient from './client';
 
-export const queryDocs = async (question, profile) => {
-  const payload = { question };
+export const queryDocs = async (question, profile, conversationId) => {
+  const payload = { question, conversationId };
   if (profile) payload.profile = profile;
   
   const response = await apiClient.post('/query', payload);
   return response.data;
 };
 
-export const queryDocsStream = async (question, profile, onToken, onDone, onError, signal) => {
-  const payload = { question };
+export const queryDocsStream = async (question, profile, conversationId, onToken, onDone, onError, signal) => {
+  const payload = { question, conversationId };
   if (profile) payload.profile = profile;
   
   try {
