@@ -1,11 +1,21 @@
 class PromptBuilder {
-  build({ question, chunks }) {
-    if (chunks.length === 0)
-      throw new Error("Cannot provide answer as there's no context");
+  #contextBuilder;
 
-    const context = chunks
-      .map((chunk, idx) => `[Context ${idx + 1}]\n${chunk.text}`)
-      .join("\n\n");
+  constructor({ contextBuilder }) {
+    this.#contextBuilder = contextBuilder;
+  }
+
+  build({ question, documentChunks = [], summary = null, conversationChunks = [], maxTokens = 2000 }) {
+    const context = this.#contextBuilder.buildContext({
+      documentChunks,
+      summary,
+      conversationChunks,
+      maxTokens,
+    });
+
+    if (!context) {
+      throw new Error("Cannot provide answer as there's no context");
+    }
 
     return `
 You are a helpful AI assistant.

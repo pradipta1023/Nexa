@@ -35,17 +35,41 @@ class ChromaVectorStore {
     await this.#collection.add(payload)
   }
 
-  async search({ queryEmbedding, topK: nResults }) {
-    if (!queryEmbedding) throw new Error("Embedding must be provided for searching");
+  /**
+   * Searches the collection for the most similar vectors.
+   *
+   * @param {object} params
+   * @param {number[]} params.queryEmbedding
+   * @param {number}  params.topK
+   * @param {object}  [params.where] - Optional ChromaDB metadata filter.
+   *   Use this to scope queries to a specific conversationId:
+   *   e.g. { conversationId: { $eq: 'abc-123' } }
+   *   The knowledge collection never passes a where filter so its
+   *   behaviour is completely unchanged.
+   * @returns {Promise<Array<{ id: string, text: string, metadata: object }>>}
+   */
+  async search({ queryEmbedding, topK: nResults, where }) {
+    if (!queryEmbedding) throw new Error('Embedding must be provided for searching');
 
-    const queryResult = await this.#collection.query({ queryEmbeddings: [queryEmbedding], nResults, include: ["documents", "metadatas"] })
+    const queryParams = {
+      queryEmbeddings: [queryEmbedding],
+      nResults,
+      include: ['documents', 'metadatas'],
+    };
 
-    const ids = queryResult.ids[0];
+    if (where) queryParams.where = where;
+
+    const queryResult = await this.#collection.query(queryParams);
+
+    const ids       = queryResult.ids[0];
     const documents = queryResult.documents[0];
     const metadatas = queryResult.metadatas[0] || [];
 
-    return ids
-      .map((id, index) => ({ id, text: documents[index], metadata: metadatas[index] }));
+    return ids.map((id, index) => ({
+      id,
+      text: documents[index],
+      metadata: metadatas[index],
+    }));
   }
 }
 
