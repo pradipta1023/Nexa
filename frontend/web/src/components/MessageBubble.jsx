@@ -9,6 +9,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import CircularProgress from '@mui/material/CircularProgress';
 import { useAppTheme } from '../theme/ThemeContext';
 
 const MessageBubble = ({ message, onRegenerate, isLast }) => {
@@ -78,9 +79,19 @@ const MessageBubble = ({ message, onRegenerate, isLast }) => {
               {message.content}
             </Typography>
           ) : (
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {message.content}
-            </ReactMarkdown>
+            <>
+              {message.content === '' && message.isStreaming && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, my: 1, color: 'text.secondary' }}>
+                  <CircularProgress size={16} color="inherit" thickness={5} />
+                  <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
+                    Thinking...
+                  </Typography>
+                </Box>
+              )}
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {message.content}
+              </ReactMarkdown>
+            </>
           )}
         </Box>
 

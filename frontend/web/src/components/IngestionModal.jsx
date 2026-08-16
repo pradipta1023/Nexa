@@ -87,8 +87,9 @@ const IngestionModal = ({ open, onClose }) => {
         await ingestText(text, parsed);
         setStatus('success');
         setMessage('Text successfully ingested!');
-        setText('');
-        setMetadata('');
+        setTimeout(() => {
+          handleClose();
+        }, 1000);
       } catch (err) {
         setStatus('error');
         setMessage(err.response?.data?.message || err.message || 'Error occurred');
@@ -104,8 +105,9 @@ const IngestionModal = ({ open, onClose }) => {
         await ingestPdf(file, parsed);
         setStatus('success');
         setMessage(`File "${file.name}" successfully uploaded!`);
-        setFile(null);
-        setMetadata('');
+        setTimeout(() => {
+          handleClose();
+        }, 1000);
       } catch (err) {
         setStatus('error');
         setMessage(err.response?.data?.message || err.message || 'Error occurred');
