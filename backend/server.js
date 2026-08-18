@@ -14,6 +14,7 @@ import Retriever from "./src/Retriever/Retriever.js";
 import PromptBuilder from "./src/PromptBuilder/PromptBuilder.js";
 import ContextBuilder from "./src/PromptBuilder/ContextBuilder.js";
 import Tokenizer from "./src/Tokenizer/Tokenizer.js";
+import AppDatabase from "./src/database/AppDatabase.js";
 import SqliteConversationStore from "./src/Conversation/SqliteConversationStore.js";
 import ConversationIndexer from "./src/Conversation/ConversationIndexer.js";
 import ConversationRetriever from "./src/Conversation/ConversationRetriever.js";
@@ -70,9 +71,10 @@ const initializeDependencies = async () => {
   const tokenizer = new Tokenizer();
   const contextBuilder = new ContextBuilder({ tokenizer });
   const promptBuilder = new PromptBuilder({ contextBuilder });
-  
-  const dbPath = path.join(__dirname, 'conversations.sqlite');
-  const conversationStore = new SqliteConversationStore(dbPath);
+
+  // Single shared SQLite connection — all stores receive this instance by injection.
+  const appDb = new AppDatabase(path.join(__dirname, 'conversations.sqlite'));
+  const conversationStore = new SqliteConversationStore(appDb.db);
   const conversationIndexer = new ConversationIndexer({ embeddingService, conversationMemoryStore: memoryVectorStore });
   const conversationRetriever = new ConversationRetriever({ embeddingService, conversationMemoryStore: memoryVectorStore });
   const conversationSummarizer = new ConversationSummarizer({ 

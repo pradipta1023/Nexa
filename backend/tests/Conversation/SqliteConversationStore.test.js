@@ -1,4 +1,5 @@
 import SqliteConversationStore from '../../src/Conversation/SqliteConversationStore.js';
+import AppDatabase from '../../src/database/AppDatabase.js';
 
 const CONV_ID = 'conv-001';
 const VALID_TURN = {
@@ -11,7 +12,8 @@ describe('SqliteConversationStore', () => {
   let store;
 
   beforeEach(() => {
-    store = new SqliteConversationStore(':memory:');
+    const appDb = new AppDatabase(':memory:');
+    store = new SqliteConversationStore(appDb.db);
   });
 
   // --- createConversation ---
