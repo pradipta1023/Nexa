@@ -24,6 +24,12 @@ import QueryApiService from "./src/api/QueryApiService.js";
 import QueryController from "./src/controllers/QueryController.js";
 import createQueryRoutes from "./src/routes/queryRoutes.js";
 import ProfileRegistry from "./src/profiles/ProfileRegistry.js";
+import KnowledgeBaseStore from "./src/KnowledgeBase/KnowledgeBaseStore.js";
+import ResourceStore from "./src/KnowledgeBase/ResourceStore.js";
+import CleanupJobStore from "./src/KnowledgeBase/CleanupJobStore.js";
+import KnowledgeBaseApiService from "./src/api/KnowledgeBaseApiService.js";
+import KnowledgeBaseController from "./src/controllers/KnowledgeBaseController.js";
+import createKnowledgeBaseRoutes from "./src/routes/knowledgeBaseRoutes.js";
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 import path from 'path';
@@ -75,6 +81,13 @@ const initializeDependencies = async () => {
   // Single shared SQLite connection — all stores receive this instance by injection.
   const appDb = new AppDatabase(path.join(__dirname, 'conversations.sqlite'));
   const conversationStore = new SqliteConversationStore(appDb.db);
+  const kbStore = new KnowledgeBaseStore(appDb.db);
+  const resourceStore = new ResourceStore(appDb.db);
+  const cleanupJobStore = new CleanupJobStore(appDb.db);
+
+  const kbApiService = new KnowledgeBaseApiService({ kbStore, resourceStore, cleanupJobStore });
+  const kbController = new KnowledgeBaseController({ kbApiService });
+
   const conversationIndexer = new ConversationIndexer({ embeddingService, conversationMemoryStore: memoryVectorStore });
   const conversationRetriever = new ConversationRetriever({ embeddingService, conversationMemoryStore: memoryVectorStore });
   const conversationSummarizer = new ConversationSummarizer({ 
@@ -107,7 +120,7 @@ const initializeDependencies = async () => {
       profileRegistry
   });
 
-  return { ingestionService, ingestionController, queryController };
+  return { ingestionService, ingestionController, queryController, kbController };
 };
 
 const startServer = async () => {
@@ -124,6 +137,11 @@ const startServer = async () => {
             queryController: dependencies.queryController
         });
         app.use('/api/query', queryRoutes);
+
+        const kbRoutes = createKnowledgeBaseRoutes({
+            kbController: dependencies.kbController
+        });
+        app.use('/api/knowledge-bases', kbRoutes);
 
         const PORT = process.env.PORT || 3000;
         app.listen(PORT, () => {

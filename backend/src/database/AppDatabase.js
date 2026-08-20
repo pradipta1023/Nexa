@@ -98,7 +98,7 @@ class AppDatabase {
         type         TEXT    NOT NULL,
         payload      TEXT    NOT NULL,   -- JSON blob
         status       TEXT    NOT NULL DEFAULT 'pending'
-                       CHECK(status IN ('pending', 'done', 'failed')),
+                       CHECK(status IN ('pending', 'failed')),
         attempts     INTEGER NOT NULL DEFAULT 0,
         max_attempts INTEGER NOT NULL DEFAULT 5,
         last_error   TEXT,
