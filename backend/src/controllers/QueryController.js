@@ -8,7 +8,7 @@ export default class QueryController {
 
     ask = async (req, res) => {
         try {
-            const { question, profile, conversationId } = req.body;
+            const { question, profile, conversationId, knowledgeBaseId } = req.body;
 
             // 1. Validate 'question'
             if (!question || typeof question !== 'string' || question.trim() === '') {
@@ -40,7 +40,7 @@ export default class QueryController {
                 res.setHeader('Cache-Control', 'no-cache');
                 res.setHeader('Connection', 'keep-alive');
 
-                const stream = await this.queryApiService.askStream({ question, profileName, conversationId });
+                const stream = await this.queryApiService.askStream({ question, profileName, conversationId, knowledgeBaseId });
                 
                 for await (const token of stream) {
                     res.write(`data: ${JSON.stringify({ token })}\n\n`);
@@ -48,7 +48,7 @@ export default class QueryController {
                 res.write(`data: [DONE]\n\n`);
                 return res.end();
             } else {
-                const result = await this.queryApiService.ask({ question, profileName, conversationId });
+                const result = await this.queryApiService.ask({ question, profileName, conversationId, knowledgeBaseId });
                 return res.status(200).json({ answer: result.answer });
             }
 

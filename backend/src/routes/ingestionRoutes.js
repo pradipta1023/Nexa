@@ -2,7 +2,7 @@ import express from 'express';
 import multer from 'multer';
 
 export default function createIngestionRoutes({ ingestionController }) {
-    const router = express.Router();
+    const router = express.Router({ mergeParams: true });
     
     // Configure multer for memory storage
     const upload = multer({ storage: multer.memoryStorage() });

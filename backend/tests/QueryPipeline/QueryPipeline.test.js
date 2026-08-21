@@ -29,7 +29,7 @@ describe('QueryPipeline', () => {
     };
     
     conversationRetriever = {
-      retrieve: jest.fn().mockResolvedValue(['Turn1'])
+      retrieve: jest.fn().mockResolvedValue([{ id: '1', text: 'Turn1', metadata: { timestamp: new Date(0).toISOString() } }])
     };
     
     conversationStore = {

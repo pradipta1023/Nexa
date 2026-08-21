@@ -1,16 +1,18 @@
 import apiClient from './client';
 
-export const queryDocs = async (question, profile, conversationId) => {
+export const queryDocs = async (question, profile, conversationId, knowledgeBaseId) => {
   const payload = { question, conversationId };
   if (profile) payload.profile = profile;
+  if (knowledgeBaseId) payload.knowledgeBaseId = knowledgeBaseId;
   
   const response = await apiClient.post('/query', payload);
   return response.data;
 };
 
-export const queryDocsStream = async (question, profile, conversationId, onToken, onDone, onError, signal) => {
+export const queryDocsStream = async (question, profile, conversationId, knowledgeBaseId, onToken, onDone, onError, signal) => {
   const payload = { question, conversationId };
   if (profile) payload.profile = profile;
+  if (knowledgeBaseId) payload.knowledgeBaseId = knowledgeBaseId;
   
   try {
     const response = await fetch('/api/query', {

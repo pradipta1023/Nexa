@@ -53,6 +53,18 @@ class KnowledgeBaseStore {
   }
 
   /**
+   * Checks if a Knowledge Base exists.
+   * @param {string} id
+   * @returns {boolean}
+   */
+  exists(id) {
+    const row = this.#db
+      .prepare('SELECT 1 FROM knowledge_bases WHERE id = ?')
+      .get(id);
+    return !!row;
+  }
+
+  /**
    * Returns all Knowledge Bases ordered by creation date descending.
    * @returns {object[]}
    */

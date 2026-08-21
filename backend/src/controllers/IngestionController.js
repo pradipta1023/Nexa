@@ -5,6 +5,7 @@ export default class IngestionController {
 
     ingestText = async (req, res) => {
         try {
+            const { knowledgeBaseId, resourceId } = req.params;
             const { text, metadata } = req.body;
 
             // 1. Validate HTTP input
@@ -18,7 +19,9 @@ export default class IngestionController {
             // 2. Call the API service
             const result = await this.ingestionApiService.ingestText({ 
                 text, 
-                metadata
+                metadata,
+                knowledgeBaseId,
+                resourceId
             });
 
             // 3. Return the HTTP response
@@ -30,6 +33,9 @@ export default class IngestionController {
 
         } catch (error) {
             // 4. Handle HTTP-specific errors
+            if (error.message.startsWith('Resource not found')) {
+                return res.status(404).json({ success: false, error: error.message });
+            }
             console.error("Error during text ingestion:", error);
             return res.status(500).json({
                 success: false,
@@ -40,6 +46,8 @@ export default class IngestionController {
 
     ingestPdf = async (req, res) => {
         try {
+            const { knowledgeBaseId, resourceId } = req.params;
+
             // 1. Validate HTTP input
             if (!req.file || req.file.mimetype !== 'application/pdf') {
                 return res.status(400).json({
@@ -62,7 +70,9 @@ export default class IngestionController {
             // 2. Call the API service
             const result = await this.ingestionApiService.ingestPdf({ 
                 pdfData: req.file.buffer, 
-                metadata: parsedMetadata 
+                metadata: parsedMetadata,
+                knowledgeBaseId,
+                resourceId
             });
 
             // 3. Return the HTTP response
@@ -73,6 +83,9 @@ export default class IngestionController {
 
         } catch (error) {
             // 4. Handle HTTP-specific errors
+            if (error.message.startsWith('Resource not found')) {
+                return res.status(404).json({ error: error.message });
+            }
             console.error("Error during PDF ingestion:", error);
             return res.status(500).json({
                 error: error.message || "An unexpected error occurred during PDF ingestion."

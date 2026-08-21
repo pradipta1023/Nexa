@@ -31,7 +31,7 @@ describe("PromptBuilder", () => {
     expect(prompt).toContain("Question:");
     expect(prompt).toContain("What is React?");
     expect(prompt).toContain("Answer:");
-    expect(prompt).toContain("Context:");
+    expect(prompt).toContain("--- CONTEXT ---");
   });
 
   test("should embed the string returned by contextBuilder", () => {
@@ -70,7 +70,7 @@ describe("PromptBuilder", () => {
       documentChunks: [{ id: 1, text: "React is a JavaScript library." }]
     });
 
-    expect(prompt).toContain("Use only the context below to answer the question");
+    expect(prompt).toContain("Do NOT use your internal knowledge under any circumstances.");
   });
 
   test("should include instructions for unknown answers", () => {
@@ -79,7 +79,7 @@ describe("PromptBuilder", () => {
       documentChunks: [{ id: 1, text: "React is a JavaScript library." }]
     });
 
-    expect(prompt).toContain("If the answer cannot be found say so.");
+    expect(prompt).toContain("If the required information for the active topic is not in the context, you MUST say so.");
   });
 
   test("should return a string", () => {

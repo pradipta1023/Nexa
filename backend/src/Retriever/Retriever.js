@@ -6,7 +6,7 @@ class Retriever {
     this.#vectorStore = vectorStore;
   }
 
-  async retrieve(question, { topK = 5 } = {}) {
+  async retrieve(question, { topK = 5, knowledgeBaseId } = {}) {
     if (typeof question !== "string") throw new Error("Question must be a string");
 
     if (!question || question.trim().length === 0)
@@ -14,7 +14,12 @@ class Retriever {
 
     const queryEmbedding = await this.#embeddingService.embed(question);
 
-    return this.#vectorStore.search({ queryEmbedding, topK });
+    const searchParams = { queryEmbedding, topK };
+    if (knowledgeBaseId) {
+      searchParams.where = { knowledgeBaseId: { $eq: knowledgeBaseId } };
+    }
+
+    return this.#vectorStore.search(searchParams);
   }
 }
 

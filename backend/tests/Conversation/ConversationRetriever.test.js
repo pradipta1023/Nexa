@@ -62,7 +62,7 @@ describe('ConversationRetriever', () => {
       expect(conversationMemoryStore.search).toHaveBeenCalledWith({
         queryEmbedding: embedding,
         topK: 5, // Default
-        conversationId: CONV_ID
+        where: { conversationId: { $eq: CONV_ID } }
       });
     });
 
@@ -75,7 +75,7 @@ describe('ConversationRetriever', () => {
       expect(conversationMemoryStore.search).toHaveBeenCalledWith({
         queryEmbedding: embedding,
         topK: 3,
-        conversationId: CONV_ID
+        where: { conversationId: { $eq: CONV_ID } }
       });
     });
 

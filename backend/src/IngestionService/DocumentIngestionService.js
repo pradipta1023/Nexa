@@ -3,22 +3,27 @@ import { Log } from "chromadb";
 class DocumentIngestionService {
   #pdfExtractor;
   #chunker;
-  #embeddingPipeline
+  #embeddingPipeline;
   #vectorStore;
+  #resourceStore;
+
   constructor({
     pdfExtractor,
     chunker,
     embeddingPipeline,
     vectorStore,
+    resourceStore,
   }) {
     this.#pdfExtractor = pdfExtractor;
     this.#chunker = chunker;
     this.#embeddingPipeline = embeddingPipeline;
     this.#vectorStore = vectorStore;
+    this.#resourceStore = resourceStore;
   }
 
-  async #processData(items) {
+  async #processData(items, { knowledgeBaseId, resourceId, resourceType, ingestionVersion }) {
     const allChunks = [];
+    let chunkIndex = 0;
 
     for (const item of items) {
       if (!item.text || item.text.trim() === '') continue;
@@ -26,7 +31,14 @@ class DocumentIngestionService {
       for (const chunk of chunks) {
         allChunks.push({
           ...chunk,
-          metadata: item.metadata
+          metadata: {
+            ...item.metadata,
+            knowledgeBaseId,
+            resourceId,
+            resourceType,
+            ingestionVersion,
+            chunkIndex: chunkIndex++
+          }
         });
       }
     }
@@ -39,22 +51,49 @@ class DocumentIngestionService {
     };
   }
 
-  async ingestText({ text, metadata }) {
-    return await this.#processData([{ text, metadata }]);
+  async ingestText({ text, metadata = {}, knowledgeBaseId, resourceId, ingestionVersion }) {
+    try {
+      this.#resourceStore.updateStatus(resourceId, 'processing');
+      const result = await this.#processData([{ text, metadata }], {
+        knowledgeBaseId,
+        resourceId,
+        resourceType: 'text',
+        ingestionVersion
+      });
+      this.#resourceStore.updateStatus(resourceId, 'ready');
+      return result;
+    } catch (error) {
+      this.#resourceStore.updateStatus(resourceId, 'failed');
+      throw error;
+    }
   }
 
-  async ingestPdf({ filePath, pdfData, metadata }) {
-    const pages = await this.#pdfExtractor.extract({ fileName: filePath, pdfData });
+  async ingestPdf({ filePath, pdfData, metadata = {}, knowledgeBaseId, resourceId, ingestionVersion }) {
+    try {
+      this.#resourceStore.updateStatus(resourceId, 'processing');
+      
+      const pages = await this.#pdfExtractor.extract({ fileName: filePath, pdfData });
 
-    const items = pages.map(page => ({
-      text: page.text,
-      metadata: {
-        ...metadata,
-        page: page.pageNumber
-      }
-    }));
+      const items = pages.map(page => ({
+        text: page.text,
+        metadata: {
+          ...metadata,
+          page: page.pageNumber
+        }
+      }));
 
-    return await this.#processData(items);
+      const result = await this.#processData(items, {
+        knowledgeBaseId,
+        resourceId,
+        resourceType: 'pdf',
+        ingestionVersion
+      });
+      this.#resourceStore.updateStatus(resourceId, 'ready');
+      return result;
+    } catch (error) {
+      this.#resourceStore.updateStatus(resourceId, 'failed');
+      throw error;
+    }
   }
 }
 

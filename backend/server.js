@@ -27,8 +27,11 @@ import ProfileRegistry from "./src/profiles/ProfileRegistry.js";
 import KnowledgeBaseStore from "./src/KnowledgeBase/KnowledgeBaseStore.js";
 import ResourceStore from "./src/KnowledgeBase/ResourceStore.js";
 import CleanupJobStore from "./src/KnowledgeBase/CleanupJobStore.js";
+import CleanupRunner from "./src/KnowledgeBase/CleanupRunner.js";
 import KnowledgeBaseApiService from "./src/api/KnowledgeBaseApiService.js";
 import KnowledgeBaseController from "./src/controllers/KnowledgeBaseController.js";
+import ResourceApiService from "./src/api/ResourceApiService.js";
+import ResourceController from "./src/controllers/ResourceController.js";
 import createKnowledgeBaseRoutes from "./src/routes/knowledgeBaseRoutes.js";
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
@@ -44,6 +47,19 @@ app.use(express.json());
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 const initializeDependencies = async () => {
+  // Single shared SQLite connection — all stores receive this instance by injection.
+  const appDb = new AppDatabase(path.join(__dirname, 'conversations.sqlite'));
+  const conversationStore = new SqliteConversationStore(appDb.db);
+  const kbStore = new KnowledgeBaseStore(appDb.db);
+  const resourceStore = new ResourceStore(appDb.db);
+  const cleanupJobStore = new CleanupJobStore(appDb.db);
+
+  const kbApiService = new KnowledgeBaseApiService({ kbStore, resourceStore, cleanupJobStore });
+  const kbController = new KnowledgeBaseController({ kbApiService });
+
+  const resourceApiService = new ResourceApiService({ resourceStore, kbStore, cleanupJobStore });
+  const resourceController = new ResourceController({ resourceApiService });
+
   const embeddingService = new OllamaEmbeddingService({ baseUrl: "http://127.0.0.1:11435", model: "nomic-embed-text" });
   
   const client = new ChromaClient({
@@ -57,6 +73,9 @@ const initializeDependencies = async () => {
   const memoryCollection = await client.getOrCreateCollection({ name: "memory", embeddingFunction: null });
   const memoryVectorStore = new ChromaVectorStore({ collection: memoryCollection });
   
+  const cleanupRunner = new CleanupRunner({ cleanupJobStore, vectorStore });
+  cleanupRunner.start();
+  
   const embeddingPipeline = new EmbeddingPipeline({ embeddingService });
   const pdfExtractor = new PdfExtractor();
 
@@ -64,10 +83,15 @@ const initializeDependencies = async () => {
     pdfExtractor,
     chunker,
     embeddingPipeline,
-    vectorStore
+    vectorStore,
+    resourceStore
   });
 
-  const ingestionApiService = new IngestionApiService({ documentIngestionService: ingestionService });
+  const ingestionApiService = new IngestionApiService({
+      documentIngestionService: ingestionService,
+      resourceStore,
+      cleanupJobStore
+  });
   const ingestionController = new IngestionController({ ingestionApiService });
 
   const chatService = new OllamaChatService({ baseUrl: "http://localhost:11435", model: "qwen3:14b" });
@@ -78,15 +102,6 @@ const initializeDependencies = async () => {
   const contextBuilder = new ContextBuilder({ tokenizer });
   const promptBuilder = new PromptBuilder({ contextBuilder });
 
-  // Single shared SQLite connection — all stores receive this instance by injection.
-  const appDb = new AppDatabase(path.join(__dirname, 'conversations.sqlite'));
-  const conversationStore = new SqliteConversationStore(appDb.db);
-  const kbStore = new KnowledgeBaseStore(appDb.db);
-  const resourceStore = new ResourceStore(appDb.db);
-  const cleanupJobStore = new CleanupJobStore(appDb.db);
-
-  const kbApiService = new KnowledgeBaseApiService({ kbStore, resourceStore, cleanupJobStore });
-  const kbController = new KnowledgeBaseController({ kbApiService });
 
   const conversationIndexer = new ConversationIndexer({ embeddingService, conversationMemoryStore: memoryVectorStore });
   const conversationRetriever = new ConversationRetriever({ embeddingService, conversationMemoryStore: memoryVectorStore });
@@ -120,7 +135,7 @@ const initializeDependencies = async () => {
       profileRegistry
   });
 
-  return { ingestionService, ingestionController, queryController, kbController };
+  return { ingestionService, ingestionController, queryController, kbController, resourceController };
 };
 
 const startServer = async () => {
@@ -131,7 +146,7 @@ const startServer = async () => {
         const ingestionRoutes = createIngestionRoutes({ 
             ingestionController: dependencies.ingestionController 
         });
-        app.use('/api/ingest', ingestionRoutes);
+        app.use('/api/knowledge-bases/:knowledgeBaseId/resources/:resourceId/ingest', ingestionRoutes);
 
         const queryRoutes = createQueryRoutes({
             queryController: dependencies.queryController
@@ -139,7 +154,8 @@ const startServer = async () => {
         app.use('/api/query', queryRoutes);
 
         const kbRoutes = createKnowledgeBaseRoutes({
-            kbController: dependencies.kbController
+            kbController: dependencies.kbController,
+            resourceController: dependencies.resourceController
         });
         app.use('/api/knowledge-bases', kbRoutes);
 

@@ -71,6 +71,10 @@ class ChromaVectorStore {
       metadata: metadatas[index],
     }));
   }
+  async delete({ where }) {
+    if (!where) throw new Error('A where filter must be provided for deletion');
+    await this.#collection.delete({ where });
+  }
 }
 
 export default ChromaVectorStore;
