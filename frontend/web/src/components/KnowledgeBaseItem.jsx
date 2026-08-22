@@ -18,10 +18,11 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import TextField from '@mui/material/TextField';
+import Checkbox from '@mui/material/Checkbox';
 import { knowledgeBaseApi } from '../api/knowledgeBaseApi';
 import ResourceList from './ResourceList';
 
-const KnowledgeBaseItem = ({ kb, onRefresh }) => {
+const KnowledgeBaseItem = ({ kb, resources, onRefresh, selectedResourceIds, setSelectedResourceIds }) => {
   const [open, setOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   
@@ -59,29 +60,61 @@ const KnowledgeBaseItem = ({ kb, onRefresh }) => {
     }
   };
 
+  const kbResourceIds = resources.map(r => r.id);
+  const isAllSelected = kbResourceIds.length > 0 && kbResourceIds.every(id => selectedResourceIds.has(id));
+  const isSomeSelected = kbResourceIds.some(id => selectedResourceIds.has(id));
+
+  const handleToggleKB = (e) => {
+    e.stopPropagation();
+    const newSelected = new Set(selectedResourceIds);
+    if (isAllSelected) {
+      kbResourceIds.forEach(id => newSelected.delete(id));
+    } else {
+      kbResourceIds.forEach(id => newSelected.add(id));
+    }
+    setSelectedResourceIds(newSelected);
+  };
+
   return (
     <>
       <ListItem disablePadding sx={{ borderBottom: 1, borderColor: 'divider', display: 'block' }}>
-        <ListItemButton onClick={() => setOpen(!open)} sx={{ pr: 6 }}>
-          <ListItemText 
-            primary={kb.name} 
-            secondary={kb.description || 'No description'} 
-            primaryTypographyProps={{ fontWeight: 500 }}
-            secondaryTypographyProps={{ noWrap: true }}
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Checkbox 
+            size="small"
+            sx={{ ml: 1 }}
+            checked={isAllSelected}
+            indeterminate={isSomeSelected && !isAllSelected}
+            onChange={handleToggleKB}
+            disabled={kbResourceIds.length === 0}
+            onClick={(e) => e.stopPropagation()}
           />
-          {open ? <ExpandLess /> : <ExpandMore />}
-        </ListItemButton>
-        <IconButton 
-          size="small" 
-          sx={{ position: 'absolute', right: 8, top: 12 }}
-          onClick={handleMenuClick}
-        >
-          <MoreVertIcon fontSize="small" />
-        </IconButton>
+          <ListItemButton onClick={() => setOpen(!open)} sx={{ pr: 6, pl: 0 }}>
+            <ListItemText 
+              primary={kb.name} 
+              secondary={kb.description || 'No description'} 
+              primaryTypographyProps={{ fontWeight: 500 }}
+              secondaryTypographyProps={{ noWrap: true }}
+            />
+            {open ? <ExpandLess /> : <ExpandMore />}
+          </ListItemButton>
+          <IconButton 
+            size="small" 
+            sx={{ position: 'absolute', right: 8, top: 12 }}
+            onClick={handleMenuClick}
+          >
+            <MoreVertIcon fontSize="small" />
+          </IconButton>
+        </Box>
         
         <Collapse in={open} timeout="auto" unmountOnExit>
-          <Box sx={{ pl: 2, pr: 2, pb: 2, bgcolor: 'background.default' }}>
-            <ResourceList kbId={kb.id} summary={kb.resources} />
+          <Box sx={{ pl: 4, pr: 2, pb: 2, bgcolor: 'background.default' }}>
+            <ResourceList 
+              kbId={kb.id} 
+              resources={resources} 
+              onRefresh={onRefresh}
+              selectedResourceIds={selectedResourceIds}
+              setSelectedResourceIds={setSelectedResourceIds}
+            />
           </Box>
         </Collapse>
       </ListItem>

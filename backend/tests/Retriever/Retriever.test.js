@@ -63,20 +63,39 @@ describe("Retriever", () => {
     });
   });
 
-  test("should pass knowledgeBaseId as where filter if provided", async () => {
-    const embedding = [0.1, 0.2];
 
+
+  test('should pass resourceIds as where filter if single element provided', async () => {
+    const embedding = [0.1, 0.2];
     embeddingService.embed.mockResolvedValue(embedding);
     vectorStore.search.mockReturnValue([]);
 
-    await retriever.retrieve("What is React?", {
-      knowledgeBaseId: 'kb-1'
+    await retriever.retrieve('dummy question', {
+      topK: 5,
+      resourceIds: ['res-1']
     });
 
     expect(vectorStore.search).toHaveBeenCalledWith({
       queryEmbedding: embedding,
       topK: 5,
-      where: { knowledgeBaseId: { $eq: 'kb-1' } }
+      where: { resourceId: { $eq: 'res-1' } }
+    });
+  });
+
+  test('should pass resourceIds as where $in filter if multiple elements provided', async () => {
+    const embedding = [0.1, 0.2];
+    embeddingService.embed.mockResolvedValue(embedding);
+    vectorStore.search.mockReturnValue([]);
+
+    await retriever.retrieve('dummy question', {
+      topK: 5,
+      resourceIds: ['res-1', 'res-2']
+    });
+
+    expect(vectorStore.search).toHaveBeenCalledWith({
+      queryEmbedding: embedding,
+      topK: 5,
+      where: { resourceId: { $in: ['res-1', 'res-2'] } }
     });
   });
 

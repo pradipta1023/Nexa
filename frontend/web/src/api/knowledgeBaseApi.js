@@ -28,6 +28,11 @@ export const knowledgeBaseApi = {
   },
 
   // Resources
+  createResource: async (kbId, data) => {
+    const response = await apiClient.post(`/knowledge-bases/${kbId}/resources`, data);
+    return response.data;
+  },
+
   listResources: async (kbId, type = null) => {
     const params = type ? { type } : {};
     const response = await apiClient.get(`/knowledge-bases/${kbId}/resources`, { params });

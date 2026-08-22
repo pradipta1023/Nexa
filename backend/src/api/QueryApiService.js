@@ -15,7 +15,7 @@ export default class QueryApiService {
         this.tokenizer = tokenizer;
     }
 
-    async ask({ question, profileName, conversationId, knowledgeBaseId }) {
+    async ask({ question, profileName, conversationId, resourceIds }) {
         const config = this.profileRegistry.get(profileName);
         if (!config) throw new Error("Invalid profile");
 
@@ -26,7 +26,7 @@ export default class QueryApiService {
             question, 
             conversationId,
             topK: config.topK, 
-            knowledgeBaseId,
+            resourceIds,
             config 
         });
         
@@ -38,13 +38,13 @@ export default class QueryApiService {
         };
     }
 
-    async *askStream({ question, profileName, conversationId, knowledgeBaseId }) {
+    async *askStream({ question, profileName, conversationId, resourceIds }) {
         const config = this.profileRegistry.get(profileName);
         if (!config) throw new Error("Invalid profile");
 
         this.conversationStore.createConversation(conversationId);
 
-        const stream = this.queryPipeline.askStream({ question, conversationId, knowledgeBaseId, config });
+        const stream = this.queryPipeline.askStream({ question, conversationId, resourceIds, config });
         
         let fullAnswer = "";
         for await (const chunk of stream) {

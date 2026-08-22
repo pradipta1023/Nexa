@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
 import Typography from '@mui/material/Typography';
@@ -7,14 +7,8 @@ import Button from '@mui/material/Button';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
 import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemText from '@mui/material/ListItemText';
-import Collapse from '@mui/material/Collapse';
-import ExpandLess from '@mui/icons-material/ExpandLess';
-import ExpandMore from '@mui/icons-material/ExpandMore';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
+import Checkbox from '@mui/material/Checkbox';
+import Tooltip from '@mui/material/Tooltip';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
@@ -23,30 +17,19 @@ import TextField from '@mui/material/TextField';
 import { knowledgeBaseApi } from '../api/knowledgeBaseApi';
 import KnowledgeBaseItem from './KnowledgeBaseItem';
 
-const KnowledgeBaseSidebar = ({ open, onClose }) => {
-  const [knowledgeBases, setKnowledgeBases] = useState([]);
-  const [loading, setLoading] = useState(false);
+const KnowledgeBaseSidebar = ({ 
+  open, 
+  onClose, 
+  selectedResourceIds, 
+  setSelectedResourceIds,
+  knowledgeBases,
+  resourcesByKb,
+  onRefresh,
+  loading
+}) => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newKbName, setNewKbName] = useState('');
   const [newKbDescription, setNewKbDescription] = useState('');
-
-  const fetchKBs = async () => {
-    try {
-      setLoading(true);
-      const data = await knowledgeBaseApi.listKBs();
-      setKnowledgeBases(data);
-    } catch (error) {
-      console.error("Failed to fetch Knowledge Bases:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (open) {
-      fetchKBs();
-    }
-  }, [open]);
 
   const handleCreateKB = async () => {
     if (!newKbName.trim()) return;
@@ -55,9 +38,21 @@ const KnowledgeBaseSidebar = ({ open, onClose }) => {
       setNewKbName('');
       setNewKbDescription('');
       setIsCreateDialogOpen(false);
-      fetchKBs();
+      onRefresh();
     } catch (error) {
       console.error("Failed to create KB:", error);
+    }
+  };
+
+  const allResourceIds = Object.values(resourcesByKb).flat().map(r => r.id);
+  const isAllSelected = allResourceIds.length > 0 && allResourceIds.every(id => selectedResourceIds.has(id));
+  const isSomeSelected = allResourceIds.some(id => selectedResourceIds.has(id));
+
+  const handleToggleAll = () => {
+    if (isAllSelected) {
+      setSelectedResourceIds(new Set());
+    } else {
+      setSelectedResourceIds(new Set(allResourceIds));
     }
   };
 
@@ -66,7 +61,18 @@ const KnowledgeBaseSidebar = ({ open, onClose }) => {
       <Drawer anchor="right" open={open} onClose={onClose} PaperProps={{ sx: { width: 350 } }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
           <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: 1, borderColor: 'divider' }}>
-            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Knowledge Bases</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Tooltip title={isAllSelected ? "Unselect All" : "Select All"}>
+                <Checkbox 
+                  size="small" 
+                  checked={isAllSelected}
+                  indeterminate={isSomeSelected && !isAllSelected}
+                  onChange={handleToggleAll}
+                  disabled={allResourceIds.length === 0}
+                />
+              </Tooltip>
+              <Typography variant="h6" sx={{ fontWeight: 'bold', ml: 1 }}>Knowledge Bases</Typography>
+            </Box>
             <Box>
               <IconButton size="small" onClick={() => setIsCreateDialogOpen(true)} color="primary" sx={{ mr: 1 }}>
                 <AddIcon />
@@ -83,7 +89,14 @@ const KnowledgeBaseSidebar = ({ open, onClose }) => {
               </Box>
             )}
             {knowledgeBases.map((kb) => (
-              <KnowledgeBaseItem key={kb.id} kb={kb} onRefresh={fetchKBs} />
+              <KnowledgeBaseItem 
+                key={kb.id} 
+                kb={kb} 
+                resources={resourcesByKb[kb.id] || []}
+                onRefresh={onRefresh} 
+                selectedResourceIds={selectedResourceIds}
+                setSelectedResourceIds={setSelectedResourceIds}
+              />
             ))}
           </List>
         </Box>

@@ -19,10 +19,10 @@ class QueryPipeline {
     this.#conversationStore = conversationStore;
   }
 
-  async #buildPrompt(question, conversationId, topK, knowledgeBaseId) {
+  async #buildPrompt(question, conversationId, topK, resourceIds) {
     // Concurrently fetch document chunks and conversation chunks
     const [documentChunks, conversationChunks] = await Promise.all([
-      this.#retriever.retrieve(question, { topK, knowledgeBaseId }),
+      this.#retriever.retrieve(question, { topK, resourceIds }),
       this.#conversationRetriever.retrieve(question, conversationId, { topK: 5 })
     ]);
 
@@ -70,20 +70,20 @@ class QueryPipeline {
     return { prompt, documentChunks };
   }
 
-  async ask({ question, conversationId, topK = 15, knowledgeBaseId }) {
+  async ask({ question, conversationId, topK = 15, resourceIds }) {
     if (!conversationId) throw new Error('conversationId is required');
 
-    const { prompt, documentChunks } = await this.#buildPrompt(question, conversationId, topK, knowledgeBaseId);
+    const { prompt, documentChunks } = await this.#buildPrompt(question, conversationId, topK, resourceIds);
     const answer = await this.#chatService.generate({ prompt });
 
     return { answer, retrievedChunks: documentChunks, prompt };
   }
 
-  async *askStream({ question, conversationId, config, knowledgeBaseId }) {
+  async *askStream({ question, conversationId, config, resourceIds }) {
     if (!conversationId) throw new Error('conversationId is required');
 
     const topK = config?.topK || 10;
-    const { prompt } = await this.#buildPrompt(question, conversationId, topK, knowledgeBaseId);
+    const { prompt } = await this.#buildPrompt(question, conversationId, topK, resourceIds);
     
     const stream = this.#chatService.generateStream({ 
         prompt, 

@@ -9,9 +9,10 @@ import ExpandMore from '@mui/icons-material/ExpandMore';
 import ArticleIcon from '@mui/icons-material/Article';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import LinkIcon from '@mui/icons-material/Link';
+import Checkbox from '@mui/material/Checkbox';
 import ResourceTypeSection from './ResourceTypeSection';
 
-const ResourceList = ({ kbId, summary }) => {
+const ResourceList = ({ kbId, resources, onRefresh, selectedResourceIds, setSelectedResourceIds }) => {
   const [openSection, setOpenSection] = useState(null);
 
   const toggleSection = (section) => {
@@ -27,26 +28,59 @@ const ResourceList = ({ kbId, summary }) => {
   return (
     <List disablePadding sx={{ mt: 1 }}>
       {sections.map((sec) => {
-        const count = summary?.[sec.type] || 0;
+        const typeResources = resources.filter(r => r.type === sec.type);
+        const count = typeResources.length;
         const isOpen = openSection === sec.type;
+
+        const typeResourceIds = typeResources.map(r => r.id);
+        const isAllSelected = typeResourceIds.length > 0 && typeResourceIds.every(id => selectedResourceIds.has(id));
+        const isSomeSelected = typeResourceIds.some(id => selectedResourceIds.has(id));
+
+        const handleToggleType = (e) => {
+          e.stopPropagation();
+          const newSelected = new Set(selectedResourceIds);
+          if (isAllSelected) {
+            typeResourceIds.forEach(id => newSelected.delete(id));
+          } else {
+            typeResourceIds.forEach(id => newSelected.add(id));
+          }
+          setSelectedResourceIds(newSelected);
+        };
 
         return (
           <Box key={sec.type}>
-            <ListItemButton 
-              onClick={() => toggleSection(sec.type)} 
-              sx={{ py: 0.5, px: 1, borderRadius: 1, mb: 0.5 }}
-            >
-              {sec.icon}
-              <ListItemText 
-                primary={`${sec.label} (${count})`} 
-                primaryTypographyProps={{ variant: 'body2', fontWeight: 500 }} 
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Checkbox 
+                size="small"
+                checked={isAllSelected}
+                indeterminate={isSomeSelected && !isAllSelected}
+                onChange={handleToggleType}
+                disabled={typeResourceIds.length === 0}
+                onClick={(e) => e.stopPropagation()}
               />
-              {isOpen ? <ExpandLess fontSize="small" /> : <ExpandMore fontSize="small" />}
-            </ListItemButton>
+              <ListItemButton 
+                onClick={() => toggleSection(sec.type)} 
+                sx={{ py: 0.5, px: 1, borderRadius: 1, mb: 0.5, pl: 0 }}
+              >
+                {sec.icon}
+                <ListItemText 
+                  primary={`${sec.label} (${count})`} 
+                  primaryTypographyProps={{ variant: 'body2', fontWeight: 500 }} 
+                />
+                {isOpen ? <ExpandLess fontSize="small" /> : <ExpandMore fontSize="small" />}
+              </ListItemButton>
+            </Box>
             
             <Collapse in={isOpen} timeout="auto" unmountOnExit>
               <Box sx={{ pl: 3, pr: 1, pb: 1 }}>
-                <ResourceTypeSection kbId={kbId} type={sec.type} />
+                <ResourceTypeSection 
+                  kbId={kbId} 
+                  type={sec.type} 
+                  resources={typeResources}
+                  onRefresh={onRefresh}
+                  selectedResourceIds={selectedResourceIds}
+                  setSelectedResourceIds={setSelectedResourceIds}
+                />
               </Box>
             </Collapse>
           </Box>

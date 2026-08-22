@@ -9,6 +9,7 @@ import DarkModeIcon from '@mui/icons-material/DarkMode';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutlined';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutlined';
 import MenuIcon from '@mui/icons-material/Menu';
+import CloseIcon from '@mui/icons-material/Close';
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import TextField from '@mui/material/TextField';
@@ -21,12 +22,13 @@ import ListItemText from '@mui/material/ListItemText';
 import SendIcon from '@mui/icons-material/Send';
 import StopIcon from '@mui/icons-material/Stop';
 import Popover from '@mui/material/Popover';
+import Tooltip from '@mui/material/Tooltip';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 import { useAppTheme } from './theme/ThemeContext';
 import ProfileSelector from './components/ProfileSelector';
 import EmptyState from './components/EmptyState';
-import IngestionModal from './components/IngestionModal';
+import KnowledgeBaseSidebar from './components/KnowledgeBaseSidebar';
 import MessageBubble from './components/MessageBubble';
 import { queryDocsStream } from './api/queryApi';
 
@@ -40,13 +42,41 @@ const App = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [status, setStatus] = useState('idle'); // idle, loading, streaming, success, error
-  const [isIngestionOpen, setIsIngestionOpen] = useState(false);
+  const [isKBSidebarOpen, setIsKBSidebarOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [deleteAnchorEl, setDeleteAnchorEl] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null); // 'all' or conversation.id
+  const [selectedResourceIds, setSelectedResourceIds] = useState(new Set()); // Set of selected resource IDs
+  const [mentionedResourceIds, setMentionedResourceIds] = useState(new Set()); // Set of resource IDs mentioned via #
+  const [knowledgeBases, setKnowledgeBases] = useState([]);
+  const [resourcesByKb, setResourcesByKb] = useState({});
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   const abortControllerRef = useRef(null);
   const messagesEndRef = useRef(null);
+
+  // Fetch KBs and Resources on mount
+  const fetchAllData = async () => {
+    try {
+      const { knowledgeBaseApi } = await import('./api/knowledgeBaseApi');
+      const kbs = await knowledgeBaseApi.listKBs();
+      setKnowledgeBases(kbs);
+
+      const resourcesMap = {};
+      await Promise.all(kbs.map(async (kb) => {
+        const res = await knowledgeBaseApi.listResources(kb.id);
+        resourcesMap[kb.id] = res;
+      }));
+      setResourcesByKb(resourcesMap);
+      setIsDataLoaded(true);
+    } catch (error) {
+      console.error("Failed to fetch KBs and resources:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllData();
+  }, []);
 
   // Persist Profile
   useEffect(() => {
@@ -160,10 +190,13 @@ const App = () => {
 
     abortControllerRef.current = new AbortController();
 
+    const resourceIdsArray = Array.from(selectedResourceIds);
+
     await queryDocsStream(
       textToSend,
       profile,
       conversationId,
+      resourceIdsArray,
       (token) => {
         setStatus('streaming');
         setMessages(prev => {
@@ -223,6 +256,56 @@ const App = () => {
     }
   };
 
+  const inputRef = useRef(null);
+  const [mentionQuery, setMentionQuery] = useState('');
+  const [mentionAnchorEl, setMentionAnchorEl] = useState(null);
+
+  const handleInputChange = (e) => {
+    const val = e.target.value;
+    setInput(val);
+    
+    // Look for `#` followed by any characters except `#` at the end of the string
+    const match = val.match(/#([^#]*)$/);
+    if (match) {
+      setMentionQuery(match[1]);
+      setMentionAnchorEl(inputRef.current);
+    } else {
+      setMentionAnchorEl(null);
+    }
+  };
+
+  const allResources = Object.values(resourcesByKb).flat();
+  const filteredMentionResources = allResources.filter(r => 
+    r.name.toLowerCase().includes(mentionQuery.toLowerCase())
+  );
+
+  const handleMentionSelect = (resource) => {
+    // Add to mentioned
+    setMentionedResourceIds(prev => new Set(prev).add(resource.id));
+    // Also sync to sidebar selection
+    setSelectedResourceIds(prev => new Set(prev).add(resource.id));
+    
+    // Remove the `#...` from the input
+    setInput(prev => prev.replace(/#([^#]*)$/, ''));
+    setMentionAnchorEl(null);
+    inputRef.current?.focus();
+  };
+
+  const handleRemoveMention = (resourceId) => {
+    setMentionedResourceIds(prev => {
+      const next = new Set(prev);
+      next.delete(resourceId);
+      return next;
+    });
+    // Do we also unselect from sidebar? The user said "if user does # and selects... it should be checked...".
+    // It's intuitive to uncheck it if they remove the chip, but let's just leave it checked in the sidebar or uncheck it. Let's uncheck it.
+    setSelectedResourceIds(prev => {
+      const next = new Set(prev);
+      next.delete(resourceId);
+      return next;
+    });
+  };
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
       {/* Header */}
@@ -236,12 +319,11 @@ const App = () => {
           </Typography>
           
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            
             <Button startIcon={<ChatBubbleOutlineIcon />} variant="outlined" size="small" color="inherit" onClick={handleNewChat}>
               New Chat
             </Button>
-            <Button startIcon={<AddCircleOutlineIcon />} variant="contained" size="small" disableElevation onClick={() => setIsIngestionOpen(true)}>
-              Add Knowledge
+            <Button startIcon={<AddCircleOutlineIcon />} variant="contained" size="small" disableElevation onClick={() => setIsKBSidebarOpen(true)}>
+              Knowledge Bases
             </Button>
             <IconButton onClick={toggleColorMode} color="inherit">
               {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
@@ -290,7 +372,16 @@ const App = () => {
         </Box>
       </Drawer>
 
-      <IngestionModal open={isIngestionOpen} onClose={() => setIsIngestionOpen(false)} />
+      <KnowledgeBaseSidebar 
+        open={isKBSidebarOpen} 
+        onClose={() => setIsKBSidebarOpen(false)} 
+        selectedResourceIds={selectedResourceIds}
+        setSelectedResourceIds={setSelectedResourceIds}
+        knowledgeBases={knowledgeBases}
+        resourcesByKb={resourcesByKb}
+        onRefresh={fetchAllData}
+        loading={!isDataLoaded}
+      />
 
       {/* Main Chat Area */}
       <Box sx={{ flexGrow: 1, overflowY: 'auto', p: 3, display: 'flex', flexDirection: 'column' }}>
@@ -314,49 +405,113 @@ const App = () => {
       </Box>
 
       {/* Input Area */}
-      <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider', backgroundColor: 'background.paper' }}>
+      <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider', backgroundColor: 'background.paper', position: 'relative' }}>
          <Container maxWidth="md">
             <TextField
+              inputRef={inputRef}
               fullWidth
               multiline
               maxRows={6}
-              placeholder="Message RAG AI..."
+              placeholder="Message RAG AI (type # to attach resources)..."
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={handleInputChange}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
+                if (e.key === 'Enter' && !e.shiftKey && !mentionAnchorEl) {
                   e.preventDefault();
                   handleSend();
                 }
               }}
               slotProps={{
                 input: {
+                  startAdornment: mentionedResourceIds.size > 0 && (
+                    <InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 1, flexWrap: 'wrap', gap: 0.5 }}>
+                      {Array.from(mentionedResourceIds).map(id => {
+                        const r = allResources.find(res => res.id === id);
+                        if (!r) return null;
+                        return (
+                          <Box 
+                            key={id} 
+                            sx={{ 
+                              bgcolor: 'primary.main', 
+                              color: 'primary.contrastText',
+                              px: 1, 
+                              py: 0.5, 
+                              borderRadius: 1,
+                              fontSize: '0.75rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 0.5
+                            }}
+                          >
+                            #{r.name}
+                            <IconButton 
+                              size="small" 
+                              onClick={() => handleRemoveMention(id)}
+                              sx={{ p: 0, color: 'inherit', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+                            >
+                              <CloseIcon sx={{ fontSize: 14 }} />
+                            </IconButton>
+                          </Box>
+                        );
+                      })}
+                    </InputAdornment>
+                  ),
                   endAdornment: (
-                    <InputAdornment position="end">
+                    <InputAdornment position="end" sx={{ alignSelf: 'flex-end', mb: 1 }}>
                       <ProfileSelector profile={profile} setProfile={setProfile} />
                       {status === 'streaming' || status === 'loading' ? (
                         <IconButton color="error" onClick={handleStop} edge="end" sx={{ mr: 0.5 }}>
                           <StopIcon />
                         </IconButton>
                       ) : (
-                        <IconButton 
-                          color="primary" 
-                          onClick={handleSend} 
-                          disabled={!input.trim()} 
-                          edge="end"
-                          sx={{ mr: 0.5 }}
-                        >
-                          <SendIcon />
-                        </IconButton>
+                        <Tooltip title={selectedResourceIds.size === 0 ? "Please select at least one resource" : ""} placement="top">
+                          <span>
+                            <IconButton 
+                              color="primary" 
+                              onClick={handleSend} 
+                              disabled={(!input.trim() && mentionedResourceIds.size === 0) || selectedResourceIds.size === 0} 
+                              edge="end"
+                              sx={{ mr: 0.5 }}
+                            >
+                              <SendIcon />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
                       )}
                     </InputAdornment>
                   ),
-                  sx: { borderRadius: 4 }
+                  sx: { borderRadius: 4, alignItems: 'center' }
                 }
               }}
             />
          </Container>
       </Box>
+
+      {/* Mention Popover */}
+      <Popover
+        open={Boolean(mentionAnchorEl)}
+        anchorEl={mentionAnchorEl}
+        onClose={() => setMentionAnchorEl(null)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
+        transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        disableAutoFocus
+        disableEnforceFocus
+        PaperProps={{ sx: { width: mentionAnchorEl ? mentionAnchorEl.clientWidth : 300, maxHeight: 300, mb: 1, borderRadius: 2 } }}
+      >
+        <List disablePadding>
+          {filteredMentionResources.length === 0 ? (
+            <ListItem>
+              <ListItemText primary="No matching resources found" secondary="Type to search..." />
+            </ListItem>
+          ) : (
+            filteredMentionResources.map(r => (
+              <ListItemButton key={r.id} onClick={() => handleMentionSelect(r)}>
+                <ListItemText primary={r.name} secondary={r.type} />
+              </ListItemButton>
+            ))
+          )}
+        </List>
+      </Popover>
 
       {/* Delete Confirmation Popover */}
       <Popover
