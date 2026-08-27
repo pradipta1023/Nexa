@@ -27,10 +27,11 @@ export const AppThemeProvider = ({ children }) => {
         palette: {
           mode,
           primary: {
-            main: '#2563eb', 
+            main: mode === 'light' ? '#2563eb' : '#60a5fa', // lighter blue in dark mode
+            contrastText: '#fff',
           },
           secondary: {
-            main: '#4f46e5',
+            main: mode === 'light' ? '#4f46e5' : '#818cf8', // lighter indigo in dark mode
           },
           background: {
             default: mode === 'light' ? '#f9fafb' : '#0f172a', 

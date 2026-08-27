@@ -107,7 +107,11 @@ const KnowledgeBaseItem = ({ kb, resources, onRefresh, selectedResourceIds, setS
         </Box>
         
         <Collapse in={open} timeout="auto" unmountOnExit>
-          <Box sx={{ pl: 4, pr: 2, pb: 2, bgcolor: 'background.default' }}>
+          <Box sx={{ 
+            pl: 4, pr: 2, pb: 2, 
+            bgcolor: 'action.hover',
+            '&:hover': { bgcolor: 'transparent' }
+          }}>
             <ResourceList 
               kbId={kb.id} 
               resources={resources} 

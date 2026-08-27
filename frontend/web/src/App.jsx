@@ -23,6 +23,7 @@ import SendIcon from '@mui/icons-material/Send';
 import StopIcon from '@mui/icons-material/Stop';
 import Popover from '@mui/material/Popover';
 import Tooltip from '@mui/material/Tooltip';
+import Chip from '@mui/material/Chip';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 import { useAppTheme } from './theme/ThemeContext';
@@ -31,6 +32,7 @@ import EmptyState from './components/EmptyState';
 import KnowledgeBaseSidebar from './components/KnowledgeBaseSidebar';
 import MessageBubble from './components/MessageBubble';
 import { queryDocsStream } from './api/queryApi';
+import { knowledgeBaseApi } from './api/knowledgeBaseApi';
 
 const App = () => {
   const { mode, toggleColorMode } = useAppTheme();
@@ -47,7 +49,6 @@ const App = () => {
   const [deleteAnchorEl, setDeleteAnchorEl] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null); // 'all' or conversation.id
   const [selectedResourceIds, setSelectedResourceIds] = useState(new Set()); // Set of selected resource IDs
-  const [mentionedResourceIds, setMentionedResourceIds] = useState(new Set()); // Set of resource IDs mentioned via #
   const [knowledgeBases, setKnowledgeBases] = useState([]);
   const [resourcesByKb, setResourcesByKb] = useState({});
   const [isDataLoaded, setIsDataLoaded] = useState(false);
@@ -58,7 +59,6 @@ const App = () => {
   // Fetch KBs and Resources on mount
   const fetchAllData = async () => {
     try {
-      const { knowledgeBaseApi } = await import('./api/knowledgeBaseApi');
       const kbs = await knowledgeBaseApi.listKBs();
       setKnowledgeBases(kbs);
 
@@ -259,6 +259,7 @@ const App = () => {
   const inputRef = useRef(null);
   const [mentionQuery, setMentionQuery] = useState('');
   const [mentionAnchorEl, setMentionAnchorEl] = useState(null);
+  const [mentionHighlightIndex, setMentionHighlightIndex] = useState(0);
 
   const handleInputChange = (e) => {
     const val = e.target.value;
@@ -269,6 +270,7 @@ const App = () => {
     if (match) {
       setMentionQuery(match[1]);
       setMentionAnchorEl(inputRef.current);
+      if (val !== input) setMentionHighlightIndex(0); // Reset index on type
     } else {
       setMentionAnchorEl(null);
     }
@@ -276,13 +278,11 @@ const App = () => {
 
   const allResources = Object.values(resourcesByKb).flat();
   const filteredMentionResources = allResources.filter(r => 
-    r.name.toLowerCase().includes(mentionQuery.toLowerCase())
+    !selectedResourceIds.has(r.id) && r.name.toLowerCase().includes(mentionQuery.toLowerCase())
   );
 
   const handleMentionSelect = (resource) => {
-    // Add to mentioned
-    setMentionedResourceIds(prev => new Set(prev).add(resource.id));
-    // Also sync to sidebar selection
+    // Add to selected
     setSelectedResourceIds(prev => new Set(prev).add(resource.id));
     
     // Remove the `#...` from the input
@@ -292,13 +292,6 @@ const App = () => {
   };
 
   const handleRemoveMention = (resourceId) => {
-    setMentionedResourceIds(prev => {
-      const next = new Set(prev);
-      next.delete(resourceId);
-      return next;
-    });
-    // Do we also unselect from sidebar? The user said "if user does # and selects... it should be checked...".
-    // It's intuitive to uncheck it if they remove the chip, but let's just leave it checked in the sidebar or uncheck it. Let's uncheck it.
     setSelectedResourceIds(prev => {
       const next = new Set(prev);
       next.delete(resourceId);
@@ -407,83 +400,97 @@ const App = () => {
       {/* Input Area */}
       <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider', backgroundColor: 'background.paper', position: 'relative' }}>
          <Container maxWidth="md">
-            <TextField
-              inputRef={inputRef}
-              fullWidth
-              multiline
-              maxRows={6}
-              placeholder="Message RAG AI (type # to attach resources)..."
-              value={input}
-              onChange={handleInputChange}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey && !mentionAnchorEl) {
-                  e.preventDefault();
-                  handleSend();
+            <Box 
+              sx={{ 
+                border: 1, 
+                borderColor: 'divider', 
+                borderRadius: 4, 
+                bgcolor: 'background.default',
+                p: 1.5,
+                '&:focus-within': {
+                  borderColor: 'primary.main',
+                  boxShadow: '0 0 0 1px rgba(37, 99, 235, 0.5)'
                 }
               }}
-              slotProps={{
-                input: {
-                  startAdornment: mentionedResourceIds.size > 0 && (
-                    <InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 1, flexWrap: 'wrap', gap: 0.5 }}>
-                      {Array.from(mentionedResourceIds).map(id => {
-                        const r = allResources.find(res => res.id === id);
-                        if (!r) return null;
-                        return (
-                          <Box 
-                            key={id} 
-                            sx={{ 
-                              bgcolor: 'primary.main', 
-                              color: 'primary.contrastText',
-                              px: 1, 
-                              py: 0.5, 
-                              borderRadius: 1,
-                              fontSize: '0.75rem',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 0.5
-                            }}
-                          >
-                            #{r.name}
-                            <IconButton 
-                              size="small" 
-                              onClick={() => handleRemoveMention(id)}
-                              sx={{ p: 0, color: 'inherit', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
-                            >
-                              <CloseIcon sx={{ fontSize: 14 }} />
-                            </IconButton>
-                          </Box>
-                        );
-                      })}
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end" sx={{ alignSelf: 'flex-end', mb: 1 }}>
-                      <ProfileSelector profile={profile} setProfile={setProfile} />
-                      {status === 'streaming' || status === 'loading' ? (
-                        <IconButton color="error" onClick={handleStop} edge="end" sx={{ mr: 0.5 }}>
-                          <StopIcon />
-                        </IconButton>
-                      ) : (
-                        <Tooltip title={selectedResourceIds.size === 0 ? "Please select at least one resource" : ""} placement="top">
-                          <span>
-                            <IconButton 
-                              color="primary" 
-                              onClick={handleSend} 
-                              disabled={(!input.trim() && mentionedResourceIds.size === 0) || selectedResourceIds.size === 0} 
-                              edge="end"
-                              sx={{ mr: 0.5 }}
-                            >
-                              <SendIcon />
-                            </IconButton>
-                          </span>
-                        </Tooltip>
-                      )}
-                    </InputAdornment>
-                  ),
-                  sx: { borderRadius: 4, alignItems: 'center' }
-                }
-              }}
-            />
+            >
+              {/* Chips Row - Shown above the text input */}
+              {selectedResourceIds.size > 0 && (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
+                  {Array.from(selectedResourceIds).map(id => {
+                    const r = allResources.find(res => res.id === id);
+                    if (!r) return null;
+                    return (
+                      <Chip 
+                        key={id}
+                        label={`#${r.name}`}
+                        onDelete={() => handleRemoveMention(id)}
+                        color="primary"
+                        size="small"
+                        sx={{ fontWeight: 500 }}
+                      />
+                    );
+                  })}
+                </Box>
+              )}
+              
+              <TextField
+                inputRef={inputRef}
+                fullWidth
+                multiline
+                maxRows={6}
+                variant="standard"
+                placeholder="Message RAG AI (type # to attach resources)..."
+                value={input}
+                onChange={handleInputChange}
+                onKeyDown={(e) => {
+                  if (mentionAnchorEl && filteredMentionResources.length > 0) {
+                    if (e.key === 'ArrowDown') {
+                      e.preventDefault();
+                      setMentionHighlightIndex(prev => (prev + 1) % filteredMentionResources.length);
+                    } else if (e.key === 'ArrowUp') {
+                      e.preventDefault();
+                      setMentionHighlightIndex(prev => (prev - 1 + filteredMentionResources.length) % filteredMentionResources.length);
+                    } else if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleMentionSelect(filteredMentionResources[mentionHighlightIndex]);
+                    }
+                  } else if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
+                slotProps={{
+                  input: {
+                    disableUnderline: true,
+                    endAdornment: (
+                      <InputAdornment position="end" sx={{ alignSelf: 'flex-end' }}>
+                        <ProfileSelector profile={profile} setProfile={setProfile} />
+                        {status === 'streaming' || status === 'loading' ? (
+                          <IconButton color="error" onClick={handleStop} edge="end" sx={{ mr: -0.5 }}>
+                            <StopIcon />
+                          </IconButton>
+                        ) : (
+                          <Tooltip title={selectedResourceIds.size === 0 ? "Please select at least one resource" : ""} placement="top">
+                            <span>
+                              <IconButton 
+                                color="primary" 
+                                onClick={handleSend} 
+                                disabled={(!input.trim() && selectedResourceIds.size === 0) || selectedResourceIds.size === 0} 
+                                edge="end"
+                                sx={{ mr: -0.5 }}
+                              >
+                                <SendIcon />
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                        )}
+                      </InputAdornment>
+                    ),
+                    sx: { alignItems: 'flex-start', p: 0 }
+                  }
+                }}
+              />
+            </Box>
          </Container>
       </Box>
 
@@ -504,8 +511,24 @@ const App = () => {
               <ListItemText primary="No matching resources found" secondary="Type to search..." />
             </ListItem>
           ) : (
-            filteredMentionResources.map(r => (
-              <ListItemButton key={r.id} onClick={() => handleMentionSelect(r)}>
+            filteredMentionResources.map((r, i) => (
+              <ListItemButton 
+                key={r.id} 
+                onClick={() => handleMentionSelect(r)}
+                selected={i === mentionHighlightIndex}
+                sx={{
+                  ...(i === mentionHighlightIndex && {
+                    bgcolor: 'primary.main',
+                    color: 'primary.contrastText',
+                    '&:hover': {
+                      bgcolor: 'primary.dark',
+                    },
+                    '& .MuiListItemText-secondary': {
+                      color: 'primary.contrastText',
+                    }
+                  })
+                }}
+              >
                 <ListItemText primary={r.name} secondary={r.type} />
               </ListItemButton>
             ))

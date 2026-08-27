@@ -14,8 +14,12 @@ const EmptyState = ({ onExampleClick }) => {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 2, mt: 8 }}>
-      <Box sx={{ p: 2, borderRadius: '50%', bgcolor: 'action.hover', mb: 2 }}>
-        <AutoAwesomeIcon sx={{ fontSize: 48, color: 'primary.main' }} />
+      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'center' }}>
+        <img 
+          src="https://framerusercontent.com/images/RWIVs3ppoTEySxC4wLSCb0PJc.jpeg" 
+          alt="Nexa Logo" 
+          style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover' }} 
+        />
       </Box>
       <Typography variant="h5" fontWeight="bold" align="center" gutterBottom>
         How can I help you today?

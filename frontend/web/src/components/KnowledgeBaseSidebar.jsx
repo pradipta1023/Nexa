@@ -73,14 +73,19 @@ const KnowledgeBaseSidebar = ({
               </Tooltip>
               <Typography variant="h6" sx={{ fontWeight: 'bold', ml: 1 }}>Knowledge Bases</Typography>
             </Box>
-            <Box>
-              <IconButton size="small" onClick={() => setIsCreateDialogOpen(true)} color="primary" sx={{ mr: 1 }}>
-                <AddIcon />
-              </IconButton>
-              <IconButton size="small" onClick={onClose}>
-                <CloseIcon />
-              </IconButton>
-            </Box>
+            <IconButton size="small" onClick={onClose}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+          <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+            <Button 
+              variant="outlined" 
+              fullWidth 
+              startIcon={<AddIcon />}
+              onClick={() => setIsCreateDialogOpen(true)}
+            >
+              New Knowledge Base
+            </Button>
           </Box>
           <List sx={{ flexGrow: 1, overflowY: 'auto', p: 0 }}>
             {knowledgeBases.length === 0 && !loading && (
