@@ -3,3 +3,8 @@ public/pdfs/
 .ai/
 .AGY.md
 backend/scripts/*
+.env
+.env.local
+# SQLite WAL/SHM runtime files
+backend/conversations.sqlite-shm
+backend/conversations.sqlite-wal
