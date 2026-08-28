@@ -1,4 +1,7 @@
 import express from 'express';
+import dotenv from 'dotenv';
+dotenv.config({ path: ['.env.local', '.env'] });
+
 import { ChromaClient } from "chromadb";
 import ChromaVectorStore from "./src/vector-store/chormaVectorStore.js";
 import chunker from "./src/chunker.js";

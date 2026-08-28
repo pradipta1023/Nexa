@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config({ path: ['.env.local', '.env'] });
+
 import { ChromaClient } from "chromadb";
 import ChromaVectorStore from "./src/vector-store/chormaVectorStore.js";
 import InMemoryVectorStore from "./src/vector-store/InMemoryVectorStore.js"
