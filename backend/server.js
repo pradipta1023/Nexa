@@ -12,7 +12,7 @@ import PdfExtractor from "./src/PdfExractor/PdfExtractor.js";
 import IngestionApiService from "./src/api/IngestionApiService.js";
 import IngestionController from "./src/controllers/IngestionController.js";
 import createIngestionRoutes from "./src/routes/ingestionRoutes.js";
-import OllamaChatService from "./src/ChatService/OllamaChatService.js";
+import GeminiChatService from "./src/ChatService/GeminiChatService.js";
 import Retriever from "./src/Retriever/Retriever.js";
 import PromptBuilder from "./src/PromptBuilder/PromptBuilder.js";
 import ContextBuilder from "./src/PromptBuilder/ContextBuilder.js";
@@ -97,7 +97,7 @@ const initializeDependencies = async () => {
   });
   const ingestionController = new IngestionController({ ingestionApiService });
 
-  const chatService = new OllamaChatService({ baseUrl: "http://localhost:11435", model: "qwen3:14b" });
+  const chatService = new GeminiChatService();
   const retriever = new Retriever({ embeddingService, vectorStore });
   
   // -- Memory System --

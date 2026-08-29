@@ -5,7 +5,7 @@ import EmbeddingPipeline from "../embeddingPipeline.js";
 import InMemoryVectorStore from "../vector-store/InMemoryVectorStore.js";
 import Retriever from "../Retriever/Retriever.js";
 import PromptBuilder from "../PromptBuilder/PromptBuilder.js";
-import OllamaChatService from "../ChatService/OllamaChatService.js";
+import GeminiChatService from "../ChatService/GeminiChatService.js";
 import RagApplication from "../RagApplication/RagApplication.js";
 import ChromaVectorStore from "../vector-store/chormaVectorStore.js";
 import LLMJudgeComparator from "../Comparator/LLMJudgeComparator.js";
@@ -37,10 +37,7 @@ const createEvaluator = async () => {
 
   const promptBuilder = new PromptBuilder();
 
-  const chatService = new OllamaChatService({
-    baseUrl: "http://localhost:11434",
-    model: "qwen3:14b",
-  });
+  const chatService = new GeminiChatService();
 
   const ragApplication = new RagApplication({
     chunker,

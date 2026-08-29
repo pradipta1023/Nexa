@@ -7,7 +7,7 @@ import InMemoryVectorStore from "./src/vector-store/InMemoryVectorStore.js"
 import chunker from "./src/chunker.js";
 import OllamaEmbeddingService from "./src/EmbeddingService/OllamaEmbeddingService.js";
 import EmbeddingPipeline from "./src/EmbeddingPipeline.js";
-import OllamaChatService from "./src/ChatService/OllamaChatService.js"
+import GeminiChatService from "./src/ChatService/GeminiChatService.js"
 import Retriever from "./src/Retriever/Retriever.js"
 import PromptBuilder from "./src/PromptBuilder/PromptBuilder.js"
 import RagApplication from "./src/RagApplication/RagApplication.js"
@@ -18,7 +18,7 @@ import QueryPipeline from "./src/QueryPipeline/QueryPipeline.js"
 
 const main = async () => {
   const embeddingService = new OllamaEmbeddingService({ baseUrl: "http://127.0.0.1:11435", model: "nomic-embed-text", })
-  const chatService = new OllamaChatService({ baseUrl: "http://localhost:11435", model: "qwen3:14b" })
+  const chatService = new GeminiChatService()
 
   const client = new ChromaClient({
     host: "localhost",

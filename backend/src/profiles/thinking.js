@@ -1,7 +1,5 @@
 export default {
-    model: 'qwen3:14b',
-    topK: 10,
-    maxTokens: 1000,
-    temperature: 0.3,
+    model: 'gemini-3.6-flash',
+    thinking_level: 'high',
     streaming: true
 };
