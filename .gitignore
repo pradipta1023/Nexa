@@ -8,3 +8,4 @@ backend/scripts/*
 # SQLite WAL/SHM runtime files
 backend/conversations.sqlite-shm
 backend/conversations.sqlite-wal
+.agents/*
