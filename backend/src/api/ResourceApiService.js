@@ -24,11 +24,11 @@ class ResourceApiService {
    * @param {{ knowledgeBaseId: string, name: string, type: 'text'|'pdf'|'link', source?: string }} params
    * @returns {object}
    */
-  createResource(params) {
-    if (!this.#kbStore.exists(params.knowledgeBaseId)) {
+  async createResource(params) {
+    if (!(await this.#kbStore.exists(params.knowledgeBaseId))) {
       throw new Error(`Knowledge Base not found: ${params.knowledgeBaseId}`);
     }
-    return this.#resourceStore.create(params);
+    return await this.#resourceStore.create(params);
   }
 
   /**
@@ -36,11 +36,11 @@ class ResourceApiService {
    * @param {string} knowledgeBaseId
    * @returns {object[]}
    */
-  listResources(knowledgeBaseId) {
-    if (!this.#kbStore.exists(knowledgeBaseId)) {
+  async listResources(knowledgeBaseId) {
+    if (!(await this.#kbStore.exists(knowledgeBaseId))) {
       throw new Error(`Knowledge Base not found: ${knowledgeBaseId}`);
     }
-    return this.#resourceStore.findByKnowledgeBaseId(knowledgeBaseId);
+    return await this.#resourceStore.findByKnowledgeBaseId(knowledgeBaseId);
   }
 
   /**
@@ -49,8 +49,8 @@ class ResourceApiService {
    * @param {string} resourceId
    * @returns {object|null}
    */
-  getResource(knowledgeBaseId, resourceId) {
-    const resource = this.#resourceStore.findById(resourceId);
+  async getResource(knowledgeBaseId, resourceId) {
+    const resource = await this.#resourceStore.findById(resourceId);
     if (!resource || resource.knowledgeBaseId !== knowledgeBaseId) {
       return null;
     }
@@ -64,12 +64,12 @@ class ResourceApiService {
    * @param {{ name?: string, source?: string }} fields
    * @returns {object|null}
    */
-  updateResourceMetadata(knowledgeBaseId, resourceId, fields) {
-    const resource = this.getResource(knowledgeBaseId, resourceId);
+  async updateResourceMetadata(knowledgeBaseId, resourceId, fields) {
+    const resource = await this.getResource(knowledgeBaseId, resourceId);
     if (!resource) return null;
 
-    this.#resourceStore.updateMetadata(resourceId, fields);
-    return this.#resourceStore.findById(resourceId);
+    await this.#resourceStore.updateMetadata(resourceId, fields);
+    return await this.#resourceStore.findById(resourceId);
   }
 
   /**
@@ -78,12 +78,12 @@ class ResourceApiService {
    * @param {string} resourceId
    * @returns {boolean}
    */
-  deleteResource(knowledgeBaseId, resourceId) {
-    const resource = this.getResource(knowledgeBaseId, resourceId);
+  async deleteResource(knowledgeBaseId, resourceId) {
+    const resource = await this.getResource(knowledgeBaseId, resourceId);
     if (!resource) return false;
 
     // Enqueue cleanup job
-    this.#cleanupJobStore.enqueue({
+    await this.#cleanupJobStore.enqueue({
       type: 'delete_resource_chunks',
       payload: {
         resourceId: resource.id,
@@ -92,7 +92,7 @@ class ResourceApiService {
       }
     });
 
-    return this.#resourceStore.delete(resourceId);
+    return await this.#resourceStore.delete(resourceId);
   }
 }
 

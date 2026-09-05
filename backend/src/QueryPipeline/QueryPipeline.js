@@ -26,7 +26,7 @@ class QueryPipeline {
       this.#conversationRetriever.retrieve(question, conversationId, { topK: 5 })
     ]);
 
-    const conversation = this.#conversationStore.getConversation(conversationId);
+    const conversation = await this.#conversationStore.getConversation(conversationId);
     const summary = conversation?.summary?.text || null;
 
     // To fix pronoun resolution (e.g. "it"), the LLM MUST see the immediate preceding turns

@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@google/genai": "^2.19.0",
-    "better-sqlite3": "^13.0.3",
     "chroma": "^0.0.1",
     "chromadb": "^3.5.0",
     "dotenv": "^17.4.2",

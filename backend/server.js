@@ -17,8 +17,8 @@ import Retriever from "./src/Retriever/Retriever.js";
 import PromptBuilder from "./src/PromptBuilder/PromptBuilder.js";
 import ContextBuilder from "./src/PromptBuilder/ContextBuilder.js";
 import Tokenizer from "./src/Tokenizer/Tokenizer.js";
-import AppDatabase from "./src/database/AppDatabase.js";
-import SqliteConversationStore from "./src/Conversation/SqliteConversationStore.js";
+import MongoDatabase from "./src/database/MongoDatabase.js";
+import MongoConversationStore from "./src/Conversation/MongoConversationStore.js";
 import ConversationIndexer from "./src/Conversation/ConversationIndexer.js";
 import ConversationRetriever from "./src/Conversation/ConversationRetriever.js";
 import ConversationSummarizer from "./src/Conversation/ConversationSummarizer.js";
@@ -27,9 +27,9 @@ import QueryApiService from "./src/api/QueryApiService.js";
 import QueryController from "./src/controllers/QueryController.js";
 import createQueryRoutes from "./src/routes/queryRoutes.js";
 import ProfileRegistry from "./src/profiles/ProfileRegistry.js";
-import KnowledgeBaseStore from "./src/KnowledgeBase/KnowledgeBaseStore.js";
-import ResourceStore from "./src/KnowledgeBase/ResourceStore.js";
-import CleanupJobStore from "./src/KnowledgeBase/CleanupJobStore.js";
+import MongoKnowledgeBaseStore from "./src/KnowledgeBase/MongoKnowledgeBaseStore.js";
+import MongoResourceStore from "./src/KnowledgeBase/MongoResourceStore.js";
+import MongoCleanupJobStore from "./src/KnowledgeBase/MongoCleanupJobStore.js";
 import CleanupRunner from "./src/KnowledgeBase/CleanupRunner.js";
 import KnowledgeBaseApiService from "./src/api/KnowledgeBaseApiService.js";
 import KnowledgeBaseController from "./src/controllers/KnowledgeBaseController.js";
@@ -50,12 +50,14 @@ app.use(express.json());
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 const initializeDependencies = async () => {
-  // Single shared SQLite connection — all stores receive this instance by injection.
-  const appDb = new AppDatabase(path.join(__dirname, 'conversations.sqlite'));
-  const conversationStore = new SqliteConversationStore(appDb.db);
-  const kbStore = new KnowledgeBaseStore(appDb.db);
-  const resourceStore = new ResourceStore(appDb.db);
-  const cleanupJobStore = new CleanupJobStore(appDb.db);
+  // Connect to MongoDB Atlas
+  const mongoDb = new MongoDatabase(process.env.MONGO_URI);
+  await mongoDb.connect();
+
+  const conversationStore = new MongoConversationStore(mongoDb);
+  const kbStore = new MongoKnowledgeBaseStore(mongoDb);
+  const resourceStore = new MongoResourceStore(mongoDb);
+  const cleanupJobStore = new MongoCleanupJobStore(mongoDb);
 
   const kbApiService = new KnowledgeBaseApiService({ kbStore, resourceStore, cleanupJobStore });
   const kbController = new KnowledgeBaseController({ kbApiService });

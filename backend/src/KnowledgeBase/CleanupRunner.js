@@ -42,7 +42,7 @@ class CleanupRunner {
     }
 
     async processNext() {
-        const pendingJobs = this.#cleanupJobStore.findPending();
+        const pendingJobs = await this.#cleanupJobStore.findPending();
         if (!pendingJobs || pendingJobs.length === 0) {
             return false;
         }
@@ -51,11 +51,11 @@ class CleanupRunner {
 
         try {
             await this.#processJob(job);
-            this.#cleanupJobStore.remove(job.id);
+            await this.#cleanupJobStore.remove(job.id);
             return true;
         } catch (error) {
             console.error(`[CleanupRunner] Job ${job.id} failed:`, error);
-            this.#cleanupJobStore.incrementAttempts(job.id, error.message || String(error));
+            await this.#cleanupJobStore.incrementAttempts(job.id, error.message || String(error));
             return false;
         }
     }

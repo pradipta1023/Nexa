@@ -10,17 +10,17 @@ export default class IngestionApiService {
     }
 
     async ingestText({ text, metadata = {}, knowledgeBaseId, resourceId }) {
-        const resource = this.#resourceStore.findById(resourceId);
+        const resource = await this.#resourceStore.findById(resourceId);
         if (!resource || resource.knowledgeBaseId !== knowledgeBaseId) {
             throw new Error(`Resource not found: ${resourceId} in Knowledge Base: ${knowledgeBaseId}`);
         }
 
         const oldVersion = resource.ingestionVersion;
-        const newVersion = this.#resourceStore.bumpIngestionVersion(resourceId);
+        const newVersion = await this.#resourceStore.bumpIngestionVersion(resourceId);
 
         // Schedule cleanup of old chunks
         if (oldVersion > 0) {
-            this.#cleanupJobStore.enqueue({
+            await this.#cleanupJobStore.enqueue({
                 type: 'delete_resource_chunks',
                 payload: {
                     resourceId,
@@ -37,17 +37,17 @@ export default class IngestionApiService {
     }
 
     async ingestPdf({ pdfData, metadata = {}, knowledgeBaseId, resourceId }) {
-        const resource = this.#resourceStore.findById(resourceId);
+        const resource = await this.#resourceStore.findById(resourceId);
         if (!resource || resource.knowledgeBaseId !== knowledgeBaseId) {
             throw new Error(`Resource not found: ${resourceId} in Knowledge Base: ${knowledgeBaseId}`);
         }
 
         const oldVersion = resource.ingestionVersion;
-        const newVersion = this.#resourceStore.bumpIngestionVersion(resourceId);
+        const newVersion = await this.#resourceStore.bumpIngestionVersion(resourceId);
 
         // Schedule cleanup of old chunks
         if (oldVersion > 0) {
-            this.#cleanupJobStore.enqueue({
+            await this.#cleanupJobStore.enqueue({
                 type: 'delete_resource_chunks',
                 payload: {
                     resourceId,

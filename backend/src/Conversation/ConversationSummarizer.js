@@ -30,7 +30,7 @@ class ConversationSummarizer {
       return; // Job already running for this conversation
     }
 
-    const conversation = this.#conversationStore.getConversation(conversationId);
+    const conversation = await this.#conversationStore.getConversation(conversationId);
     if (!conversation) return;
 
     if (conversation.totalTokens <= thresholdTokens) {
@@ -75,7 +75,7 @@ class ConversationSummarizer {
       // we'd need tokenizer injected here. Let's assume average 4 chars per token.
       const estimatedTokens = Math.ceil(summaryText.length / 4);
 
-      this.#conversationStore.updateSummary(
+      await this.#conversationStore.updateSummary(
         conversationId,
         { text: summaryText, tokenCount: estimatedTokens },
         turnIds

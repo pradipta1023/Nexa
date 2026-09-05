@@ -9,7 +9,7 @@ class ResourceController {
     this.#resourceApiService = resourceApiService;
   }
 
-  create = (req, res) => {
+  create = async (req, res) => {
     try {
       const { knowledgeBaseId } = req.params;
       const { name, type, source } = req.body;
@@ -25,7 +25,7 @@ class ResourceController {
       // NOTE: For 'link' types, we might want to validate 'source' is a valid URL, 
       // but for now we just pass it to the service.
 
-      const resource = this.#resourceApiService.createResource({
+      const resource = await this.#resourceApiService.createResource({
         knowledgeBaseId,
         name,
         type,
@@ -42,10 +42,10 @@ class ResourceController {
     }
   };
 
-  list = (req, res) => {
+  list = async (req, res) => {
     try {
       const { knowledgeBaseId } = req.params;
-      const resources = this.#resourceApiService.listResources(knowledgeBaseId);
+      const resources = await this.#resourceApiService.listResources(knowledgeBaseId);
       return res.status(200).json(resources);
     } catch (error) {
       if (error.message.startsWith('Knowledge Base not found')) {
@@ -56,10 +56,10 @@ class ResourceController {
     }
   };
 
-  getOne = (req, res) => {
+  getOne = async (req, res) => {
     try {
       const { knowledgeBaseId, id } = req.params;
-      const resource = this.#resourceApiService.getResource(knowledgeBaseId, id);
+      const resource = await this.#resourceApiService.getResource(knowledgeBaseId, id);
 
       if (!resource) {
         return res.status(404).json({ error: `Resource not found: ${id} in Knowledge Base: ${knowledgeBaseId}` });
@@ -72,7 +72,7 @@ class ResourceController {
     }
   };
 
-  updateMetadata = (req, res) => {
+  updateMetadata = async (req, res) => {
     try {
       const { knowledgeBaseId, id } = req.params;
       const { name, source } = req.body;
@@ -81,7 +81,7 @@ class ResourceController {
         return res.status(400).json({ error: "The 'name' field must be a non-empty string." });
       }
 
-      const resource = this.#resourceApiService.updateResourceMetadata(knowledgeBaseId, id, { name, source });
+      const resource = await this.#resourceApiService.updateResourceMetadata(knowledgeBaseId, id, { name, source });
 
       if (!resource) {
         return res.status(404).json({ error: `Resource not found: ${id} in Knowledge Base: ${knowledgeBaseId}` });
@@ -94,10 +94,10 @@ class ResourceController {
     }
   };
 
-  delete = (req, res) => {
+  delete = async (req, res) => {
     try {
       const { knowledgeBaseId, id } = req.params;
-      const deleted = this.#resourceApiService.deleteResource(knowledgeBaseId, id);
+      const deleted = await this.#resourceApiService.deleteResource(knowledgeBaseId, id);
 
       if (!deleted) {
         return res.status(404).json({ error: `Resource not found: ${id} in Knowledge Base: ${knowledgeBaseId}` });

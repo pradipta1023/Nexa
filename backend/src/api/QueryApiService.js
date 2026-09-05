@@ -19,7 +19,7 @@ export default class QueryApiService {
         const config = this.profileRegistry.get(profileName);
         if (!config) throw new Error("Invalid profile");
 
-        this.conversationStore.createConversation(conversationId);
+        await this.conversationStore.createConversation(conversationId);
 
         // Delegate to the underlying QueryPipeline
         const result = await this.queryPipeline.ask({ 
@@ -42,7 +42,7 @@ export default class QueryApiService {
         const config = this.profileRegistry.get(profileName);
         if (!config) throw new Error("Invalid profile");
 
-        this.conversationStore.createConversation(conversationId);
+        await this.conversationStore.createConversation(conversationId);
 
         const stream = this.queryPipeline.askStream({ question, conversationId, resourceIds, config });
         
@@ -65,7 +65,7 @@ export default class QueryApiService {
             try {
                 const tokenCount = this.tokenizer.countTokens(question + " " + answer);
                 
-                const turn = this.conversationStore.addTurn(conversationId, {
+                const turn = await this.conversationStore.addTurn(conversationId, {
                     userMessage: question,
                     assistantResponse: answer,
                     tokenCount

@@ -25,16 +25,16 @@ class KnowledgeBaseApiService {
    * @param {{ name: string, description?: string }} params
    * @returns {object} The created KB
    */
-  createKnowledgeBase({ name, description }) {
-    return this.#kbStore.create({ name, description });
+  async createKnowledgeBase({ name, description }) {
+    return await this.#kbStore.create({ name, description });
   }
 
   /**
    * Returns all Knowledge Bases.
    * @returns {object[]}
    */
-  listKnowledgeBases() {
-    return this.#kbStore.findAll();
+  async listKnowledgeBases() {
+    return await this.#kbStore.findAll();
   }
 
   /**
@@ -42,11 +42,11 @@ class KnowledgeBaseApiService {
    * @param {string} id
    * @returns {object|null}
    */
-  getKnowledgeBase(id) {
-    const kb = this.#kbStore.findById(id);
+  async getKnowledgeBase(id) {
+    const kb = await this.#kbStore.findById(id);
     if (!kb) return null;
 
-    const resources = this.#resourceStore.findByKnowledgeBaseId(id);
+    const resources = await this.#resourceStore.findByKnowledgeBaseId(id);
     const resourceCounts = { text: 0, pdf: 0, link: 0 };
     for (const r of resources) {
       resourceCounts[r.type] = (resourceCounts[r.type] ?? 0) + 1;
@@ -61,11 +61,11 @@ class KnowledgeBaseApiService {
    * @param {{ name?: string, description?: string }} fields
    * @returns {object|null}
    */
-  updateKnowledgeBase(id, { name, description }) {
-    const kb = this.#kbStore.findById(id);
+  async updateKnowledgeBase(id, { name, description }) {
+    const kb = await this.#kbStore.findById(id);
     if (!kb) return null;
 
-    return this.#kbStore.update(id, { name, description });
+    return await this.#kbStore.update(id, { name, description });
   }
 
   /**
@@ -79,17 +79,17 @@ class KnowledgeBaseApiService {
    * @param {string} id
    * @returns {boolean} false if KB not found
    */
-  deleteKnowledgeBase(id) {
-    const kb = this.#kbStore.findById(id);
+  async deleteKnowledgeBase(id) {
+    const kb = await this.#kbStore.findById(id);
     if (!kb) return false;
 
     // Snapshot resources before cascade-delete removes them.
-    const resources = this.#resourceStore.findByKnowledgeBaseId(id);
+    const resources = await this.#resourceStore.findByKnowledgeBaseId(id);
 
     // Enqueue one cleanup job per resource to delete its Chroma chunks.
     // Jobs execute sequentially in the order they are enqueued (BE-9).
     for (const resource of resources) {
-      this.#cleanupJobStore.enqueue({
+      await this.#cleanupJobStore.enqueue({
         type: 'delete_resource_chunks',
         payload: {
           resourceId: resource.id,
@@ -99,7 +99,7 @@ class KnowledgeBaseApiService {
       });
     }
 
-    this.#kbStore.delete(id);
+    await this.#kbStore.delete(id);
     return true;
   }
 }

@@ -10,7 +10,7 @@ class KnowledgeBaseController {
     this.#kbApiService = kbApiService;
   }
 
-  create = (req, res) => {
+  create = async (req, res) => {
     try {
       const { name, description } = req.body;
 
@@ -18,7 +18,7 @@ class KnowledgeBaseController {
         return res.status(400).json({ error: "The 'name' field is required and must be a non-empty string." });
       }
 
-      const kb = this.#kbApiService.createKnowledgeBase({ name, description });
+      const kb = await this.#kbApiService.createKnowledgeBase({ name, description });
       return res.status(201).json(kb);
     } catch (error) {
       console.error('[KnowledgeBaseController] create error:', error);
@@ -26,9 +26,9 @@ class KnowledgeBaseController {
     }
   };
 
-  list = (_req, res) => {
+  list = async (_req, res) => {
     try {
-      const kbs = this.#kbApiService.listKnowledgeBases();
+      const kbs = await this.#kbApiService.listKnowledgeBases();
       return res.status(200).json(kbs);
     } catch (error) {
       console.error('[KnowledgeBaseController] list error:', error);
@@ -36,10 +36,10 @@ class KnowledgeBaseController {
     }
   };
 
-  getOne = (req, res) => {
+  getOne = async (req, res) => {
     try {
       const { id } = req.params;
-      const kb = this.#kbApiService.getKnowledgeBase(id);
+      const kb = await this.#kbApiService.getKnowledgeBase(id);
 
       if (!kb) {
         return res.status(404).json({ error: `Knowledge Base not found: ${id}` });
@@ -52,7 +52,7 @@ class KnowledgeBaseController {
     }
   };
 
-  update = (req, res) => {
+  update = async (req, res) => {
     try {
       const { id } = req.params;
       const { name, description } = req.body;
@@ -61,7 +61,7 @@ class KnowledgeBaseController {
         return res.status(400).json({ error: "The 'name' field must be a non-empty string." });
       }
 
-      const kb = this.#kbApiService.updateKnowledgeBase(id, { name, description });
+      const kb = await this.#kbApiService.updateKnowledgeBase(id, { name, description });
 
       if (!kb) {
         return res.status(404).json({ error: `Knowledge Base not found: ${id}` });
@@ -74,10 +74,10 @@ class KnowledgeBaseController {
     }
   };
 
-  delete = (req, res) => {
+  delete = async (req, res) => {
     try {
       const { id } = req.params;
-      const deleted = this.#kbApiService.deleteKnowledgeBase(id);
+      const deleted = await this.#kbApiService.deleteKnowledgeBase(id);
 
       if (!deleted) {
         return res.status(404).json({ error: `Knowledge Base not found: ${id}` });
