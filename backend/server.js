@@ -2,10 +2,10 @@ import express from 'express';
 import dotenv from 'dotenv';
 dotenv.config({ path: ['.env.local', '.env'] });
 
-import { ChromaClient } from "chromadb";
+import { getChromaClient } from "./src/config/chromaConfig.js";
 import ChromaVectorStore from "./src/vector-store/chormaVectorStore.js";
 import chunker from "./src/chunker.js";
-import OllamaEmbeddingService from "./src/EmbeddingService/OllamaEmbeddingService.js";
+import GeminiEmbeddingService from "./src/EmbeddingService/GeminiEmbeddingService.js";
 import EmbeddingPipeline from "./src/EmbeddingPipeline.js";
 import DocumentIngestionService from "./src/IngestionService/DocumentIngestionService.js";
 import PdfExtractor from "./src/PdfExractor/PdfExtractor.js";
@@ -65,17 +65,14 @@ const initializeDependencies = async () => {
   const resourceApiService = new ResourceApiService({ resourceStore, kbStore, cleanupJobStore });
   const resourceController = new ResourceController({ resourceApiService });
 
-  const embeddingService = new OllamaEmbeddingService({ baseUrl: "http://127.0.0.1:11435", model: "nomic-embed-text" });
+  const embeddingService = new GeminiEmbeddingService({ apiKey: process.env.GEMINI_API_KEY });
   
-  const client = new ChromaClient({
-    host: "localhost",
-    port: 8000,
-    ssl: false
-  });
-  const collection = await client.getOrCreateCollection({ name: "test", embeddingFunction: null });
+  const client = getChromaClient();
+  
+  const collection = await client.getOrCreateCollection({ name: "KnowledgeBases", embeddingFunction: null });
   const vectorStore = new ChromaVectorStore({ collection });
 
-  const memoryCollection = await client.getOrCreateCollection({ name: "memory", embeddingFunction: null });
+  const memoryCollection = await client.getOrCreateCollection({ name: "conversationMemory", embeddingFunction: null });
   const memoryVectorStore = new ChromaVectorStore({ collection: memoryCollection });
   
   const cleanupRunner = new CleanupRunner({ cleanupJobStore, vectorStore });
