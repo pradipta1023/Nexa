@@ -1,6 +1,9 @@
 import express from 'express';
+import cors from 'cors';
 import dotenv from 'dotenv';
 dotenv.config({ path: ['.env.local', '.env'] });
+
+import { validateEnv } from './src/config/validateEnv.js';
 
 import { getChromaClient } from "./src/config/chromaConfig.js";
 import ChromaVectorStore from "./src/vector-store/chormaVectorStore.js";
@@ -47,7 +50,20 @@ const swaggerDocument = YAML.load(path.join(__dirname, 'docs', 'swagger.yaml'));
 
 const app = express();
 app.use(express.json());
+
+// CORS — allow configurable origins, default to permissive for development
+const corsOrigin = process.env.CORS_ORIGIN;
+app.use(cors({
+  origin: corsOrigin ? corsOrigin.split(',').map(o => o.trim()) : true,
+}));
+
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+// Health check — registered before dependency init so Render can verify the
+// process is alive even while MongoDB/Chroma are still connecting.
+app.get('/health', (_req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
 
 const initializeDependencies = async () => {
   // Connect to MongoDB Atlas
@@ -142,6 +158,8 @@ const initializeDependencies = async () => {
 
 const startServer = async () => {
     try {
+        validateEnv();
+
         const dependencies = await initializeDependencies();
         
         // Attach routes
@@ -162,7 +180,7 @@ const startServer = async () => {
         app.use('/api/knowledge-bases', kbRoutes);
 
         const PORT = process.env.PORT || 3000;
-        app.listen(PORT, () => {
+        app.listen(PORT, '0.0.0.0', () => {
             console.log(`Server is running on port ${PORT}`);
         });
     } catch (error) {

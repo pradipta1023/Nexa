@@ -5,6 +5,9 @@
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js"
   },
   "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
   "devDependencies": {
     "jest": "^30.4.2"
   },
@@ -12,6 +15,7 @@
     "@google/genai": "^2.19.0",
     "chroma": "^0.0.1",
     "chromadb": "^3.5.0",
+    "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "gpt-tokenizer": "^4.0.0",

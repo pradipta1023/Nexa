@@ -26,11 +26,11 @@ describe('KnowledgeBaseApiService', () => {
   });
 
   describe('createKnowledgeBase', () => {
-    test('delegates to kbStore', () => {
+    test('delegates to kbStore', async () => {
       const mockKb = { id: 'kb1', name: 'Test' };
-      kbStore.create.mockReturnValue(mockKb);
+      kbStore.create.mockResolvedValue(mockKb);
 
-      const result = service.createKnowledgeBase({ name: 'Test' });
+      const result = await service.createKnowledgeBase({ name: 'Test' });
 
       expect(kbStore.create).toHaveBeenCalledWith({ name: 'Test', description: undefined });
       expect(result).toBe(mockKb);
@@ -38,11 +38,11 @@ describe('KnowledgeBaseApiService', () => {
   });
 
   describe('listKnowledgeBases', () => {
-    test('delegates to kbStore', () => {
+    test('delegates to kbStore', async () => {
       const mockList = [{ id: 'kb1' }];
-      kbStore.findAll.mockReturnValue(mockList);
+      kbStore.findAll.mockResolvedValue(mockList);
 
-      const result = service.listKnowledgeBases();
+      const result = await service.listKnowledgeBases();
 
       expect(kbStore.findAll).toHaveBeenCalled();
       expect(result).toBe(mockList);
@@ -50,18 +50,18 @@ describe('KnowledgeBaseApiService', () => {
   });
 
   describe('getKnowledgeBase', () => {
-    test('returns null if kb not found', () => {
-      kbStore.findById.mockReturnValue(null);
-      expect(service.getKnowledgeBase('missing')).toBeNull();
+    test('returns null if kb not found', async () => {
+      kbStore.findById.mockResolvedValue(null);
+      expect(await service.getKnowledgeBase('missing')).toBeNull();
     });
 
-    test('returns kb with resource counts', () => {
-      kbStore.findById.mockReturnValue({ id: 'kb1', name: 'Test' });
-      resourceStore.findByKnowledgeBaseId.mockReturnValue([
+    test('returns kb with resource counts', async () => {
+      kbStore.findById.mockResolvedValue({ id: 'kb1', name: 'Test' });
+      resourceStore.findByKnowledgeBaseId.mockResolvedValue([
         { type: 'text' }, { type: 'text' }, { type: 'pdf' }
       ]);
 
-      const result = service.getKnowledgeBase('kb1');
+      const result = await service.getKnowledgeBase('kb1');
 
       expect(result).toEqual({
         id: 'kb1',
@@ -72,17 +72,17 @@ describe('KnowledgeBaseApiService', () => {
   });
 
   describe('updateKnowledgeBase', () => {
-    test('returns null if kb not found', () => {
-      kbStore.findById.mockReturnValue(null);
-      expect(service.updateKnowledgeBase('missing', {})).toBeNull();
+    test('returns null if kb not found', async () => {
+      kbStore.findById.mockResolvedValue(null);
+      expect(await service.updateKnowledgeBase('missing', {})).toBeNull();
     });
 
-    test('delegates to kbStore if found', () => {
-      kbStore.findById.mockReturnValue({ id: 'kb1' });
+    test('delegates to kbStore if found', async () => {
+      kbStore.findById.mockResolvedValue({ id: 'kb1' });
       const mockUpdated = { id: 'kb1', name: 'New' };
-      kbStore.update.mockReturnValue(mockUpdated);
+      kbStore.update.mockResolvedValue(mockUpdated);
 
-      const result = service.updateKnowledgeBase('kb1', { name: 'New' });
+      const result = await service.updateKnowledgeBase('kb1', { name: 'New' });
 
       expect(kbStore.update).toHaveBeenCalledWith('kb1', { name: 'New', description: undefined });
       expect(result).toBe(mockUpdated);
@@ -90,20 +90,20 @@ describe('KnowledgeBaseApiService', () => {
   });
 
   describe('deleteKnowledgeBase', () => {
-    test('returns false if kb not found', () => {
-      kbStore.findById.mockReturnValue(null);
-      expect(service.deleteKnowledgeBase('missing')).toBe(false);
+    test('returns false if kb not found', async () => {
+      kbStore.findById.mockResolvedValue(null);
+      expect(await service.deleteKnowledgeBase('missing')).toBe(false);
     });
 
-    test('enqueues cleanup jobs and deletes kb', () => {
-      kbStore.findById.mockReturnValue({ id: 'kb1' });
-      resourceStore.findByKnowledgeBaseId.mockReturnValue([
+    test('enqueues cleanup jobs and deletes kb', async () => {
+      kbStore.findById.mockResolvedValue({ id: 'kb1' });
+      resourceStore.findByKnowledgeBaseId.mockResolvedValue([
         { id: 'r1', ingestionVersion: 2 },
         { id: 'r2', ingestionVersion: 1 }
       ]);
-      kbStore.delete.mockReturnValue(true);
+      kbStore.delete.mockResolvedValue(true);
 
-      const result = service.deleteKnowledgeBase('kb1');
+      const result = await service.deleteKnowledgeBase('kb1');
 
       expect(result).toBe(true);
       expect(cleanupJobStore.enqueue).toHaveBeenCalledTimes(2);

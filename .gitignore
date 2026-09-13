@@ -5,7 +5,8 @@ public/pdfs/
 backend/scripts/*
 .env
 .env.local
-# SQLite WAL/SHM runtime files
-backend/conversations.sqlite-shm
-backend/conversations.sqlite-wal
+# SQLite leftovers (app uses MongoDB now)
+backend/*.sqlite
+backend/*.sqlite-shm
+backend/*.sqlite-wal
 .agents/*
