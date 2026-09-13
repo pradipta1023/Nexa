@@ -1,7 +1,7 @@
 import { ChromaClient } from "chromadb";
 import chunker from "../chunker.js";
 import OllamaEmbeddingService from "../EmbeddingService/OllamaEmbeddingService.js";
-import EmbeddingPipeline from "../embeddingPipeline.js";
+import EmbeddingPipeline from "../EmbeddingPipeline.js";
 import InMemoryVectorStore from "../vector-store/InMemoryVectorStore.js";
 import Retriever from "../Retriever/Retriever.js";
 import PromptBuilder from "../PromptBuilder/PromptBuilder.js";
