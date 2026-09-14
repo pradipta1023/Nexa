@@ -13,7 +13,7 @@ class GeminiChatService {
     if (typeof prompt !== "string") throw new Error("Prompt must be a string.");
     if (!prompt.trim()) throw new Error("Prompt must be a non-empty string.");
 
-    const requestModel = model || 'gemini-3.6-flash';
+    const requestModel = model || 'gemini-2.5-flash';
     const config = {};
 
     if (thinking_level !== undefined) {
@@ -37,7 +37,7 @@ class GeminiChatService {
     if (typeof prompt !== "string") throw new Error("Prompt must be a string.");
     if (!prompt.trim()) throw new Error("Prompt must be a non-empty string.");
 
-    const requestModel = model || 'gemini-3.6-flash';
+    const requestModel = model || 'gemini-2.5-flash';
     const config = {};
 
     if (thinking_level !== undefined) {

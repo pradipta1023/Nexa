@@ -1,5 +1,5 @@
 export default {
-    model: 'gemini-3.6-flash',
+    model: 'gemini-2.5-flash',
     thinking_level: 'low',
     streaming: true
 };
