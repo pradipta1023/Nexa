@@ -1,4 +1,4 @@
-import apiClient from './client';
+import apiClient, { API_BASE_URL } from './client';
 
 export const queryDocs = async (question, profile, conversationId, resourceIds) => {
   const payload = { question, conversationId };
@@ -15,7 +15,7 @@ export const queryDocsStream = async (question, profile, conversationId, resourc
   if (resourceIds && resourceIds.length > 0) payload.resourceIds = resourceIds;
   
   try {
-    const response = await fetch('/api/query', {
+    const response = await fetch(`${API_BASE_URL}/api/query`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
