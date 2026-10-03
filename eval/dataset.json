@@ -1,0 +1,20 @@
+[
+  {
+    "id": "scenario-1",
+    "resource_text": "Acme Corp allows employees to work remotely up to 3 days a week. Mandatory office days are Tuesday and Wednesday. Employees receive a $500 stipend for home office equipment.",
+    "question": "Which days do I have to come to the office at Acme Corp?",
+    "expected_answer": "You must come to the office on Tuesday and Wednesday."
+  },
+  {
+    "id": "scenario-2",
+    "resource_text": "The Nexa smart thermostat uses machine learning to optimize heating. It requires a 2.4GHz Wi-Fi connection and is compatible with Alexa and Google Assistant, but currently does not support Apple HomeKit.",
+    "question": "Can I use the Nexa thermostat with my Apple HomeKit setup?",
+    "expected_answer": "No, the Nexa smart thermostat currently does not support Apple HomeKit."
+  },
+  {
+    "id": "scenario-3",
+    "resource_text": "Project Phoenix will launch in Q3 2024. The primary goal is to migrate the legacy database to PostgreSQL. The project budget is $1.2 million.",
+    "question": "What is the budget for Project Phoenix and when does it launch?",
+    "expected_answer": "Project Phoenix has a budget of $1.2 million and will launch in Q3 2024."
+  }
+]
