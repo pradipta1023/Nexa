@@ -38,7 +38,7 @@ describe('validateEnv', () => {
 
   it('should list all missing variables in a single error', () => {
     expect(() => validateEnv({})).toThrow(
-      'Missing required environment variables: GEMINI_API_KEY, MONGO_URI, CHROMA_ENV'
+      'Missing required environment variables: MONGO_URI, CHROMA_ENV, GEMINI_API_KEY'
     );
   });
 

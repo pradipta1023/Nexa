@@ -4,7 +4,6 @@
  * Never exposes secret values in error messages.
  */
 const REQUIRED_VARS = [
-  'GEMINI_API_KEY',
   'MONGO_URI',
   'CHROMA_ENV',
 ];
@@ -16,6 +15,11 @@ const CHROMA_CLOUD_VARS = [
 
 export function validateEnv(env = process.env) {
   const missing = REQUIRED_VARS.filter((key) => !env[key]);
+
+  const aiProvider = env.AI_PROVIDER || 'cloud';
+  if (aiProvider === 'cloud' && !env.GEMINI_API_KEY) {
+      missing.push('GEMINI_API_KEY');
+  }
 
   if (missing.length > 0) {
     throw new Error(

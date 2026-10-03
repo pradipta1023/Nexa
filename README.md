@@ -1,332 +1,77 @@
-# RAG Pipeline - Development Guide
+# Nexa RAG Pipeline
 
-## Prerequisites
+A production-ready Retrieval-Augmented Generation (RAG) backend built with **Gemini**, **MongoDB**, and **Chroma**.
 
-* Node.js 22+
-* Docker
-* Colima
-* Docker Compose
+## 🚀 Features
 
----
+- **Gemini Integration**: High-performance embeddings and conversational AI using Google Gemini.
+- **Dual-Environment Vector Search**: Seamlessly toggle between local development (Docker Chroma) and production (Chroma Cloud `NexaDB`).
+- **Persistent Storage**: MongoDB for tracking Knowledge Bases, Document Resources, and Conversation Memory.
+- **Robust Ingestion Pipeline**: Built-in document parsing (PDF, Text), semantic chunking, and intelligent metadata extraction.
+- **Knowledge Base API**: Full RESTful management of custom knowledge bases with automatic vector lifecycle cleanup via background workers.
+- **Conversation Memory**: Context-aware chat sessions persisted securely in MongoDB.
+- **Test Coverage**: Comprehensive Jest test suite covering all APIs, Stores, and AI integrations.
 
-# Start Colima
+## 📋 Prerequisites
 
+- Node.js 24+
+- Docker & Docker Compose (for local development)
+- MongoDB (local or Atlas)
+- Gemini API Key
+- Chroma Cloud API Key (for production)
+
+## 🛠️ Quick Start
+
+### 1. Install Dependencies
 ```bash
-colima start --cpu 8 --memory 16 --disk 100
+cd backend
+npm install
 ```
 
-Verify:
+### 2. Environment Configuration
+Copy `.env.example` to `.env.local` and fill in your secrets:
+```env
+# AI Services
+GEMINI_API_KEY=your_gemini_api_key
 
-```bash
-colima status
+# Database configuration
+MONGO_URI=mongodb://localhost:27017/rag-pipeline
+
+# Vector Store (local or cloud)
+CHROMA_ENV=local 
+CHROMA_CLOUD_API_KEY=your_chroma_api_key
 ```
 
----
-
-# Start the application services
-
+### 3. Start Local Infrastructure
+Start your local Chroma and MongoDB containers:
 ```bash
+cd backend
 docker compose up -d
 ```
 
-Check running containers:
-
+### 4. Run the Server
 ```bash
-docker compose ps
+cd backend
+npm run dev
 ```
 
-or
+## 🧰 Development Commands
 
-```bash
-docker ps
+- `npm test` — Run the full Jest test suite.
+- `npm run dev` — Start the backend with hot-reload.
+- `docker compose ps` — Check the status of your local infrastructure.
+- `node scripts/migrate-to-cloud.js` — Migrate your local Chroma vector data directly to Chroma Cloud.
+
+## 🏗️ Architecture
+
+```mermaid
+graph TD;
+    A[Client Applications] --> B[Nexa Backend API];
+    B --> C[Gemini AI Service];
+    B --> D[(MongoDB)];
+    B --> E[(Chroma Vector Store)];
+    
+    C --> F[Chat Responses & Text Embeddings];
+    D --> G[Knowledge Bases, Resources, & Memory];
+    E --> H[Local Docker / Chroma Cloud];
 ```
-
----
-
-# Stop the services
-
-```bash
-docker compose down
-```
-
----
-
-# View logs
-
-### Ollama
-
-```bash
-docker logs ollama
-```
-
-### Chroma
-
-```bash
-docker logs chroma
-```
-
----
-
-# Ollama Commands
-
-## List installed models
-
-```bash
-docker exec -it ollama ollama list
-```
-
-## Pull a model
-
-Example:
-
-```bash
-docker exec -it ollama ollama pull qwen3:14b
-```
-
-Embedding model:
-
-```bash
-docker exec -it ollama ollama pull nomic-embed-text
-```
-
-## Running models
-
-```bash
-docker exec -it ollama ollama ps
-```
-
----
-
-# Chroma
-
-Runs on:
-
-```
-http://localhost:8000
-```
-
-Backend configuration:
-
-```javascript
-new ChromaClient({
-  host: "localhost",
-  port: 8000,
-  ssl: false,
-});
-```
-
----
-
-# Ollama
-
-Runs on:
-
-```
-http://localhost:11435
-```
-
-Backend configuration:
-
-```javascript
-const BASE_URL = "http://localhost:11435";
-```
-
----
-
-# Current Models
-
-### Chat
-
-```
-qwen3:14b
-```
-
-### Embeddings
-
-```
-nomic-embed-text
-```
-
----
-
-# Docker Volumes
-
-### Chroma
-
-```
-chroma-data
-```
-
-Stores:
-
-* Vector embeddings
-* Documents
-* Collection data
-
-### Ollama
-
-```
-ollama-data
-```
-
-Stores:
-
-* Downloaded models
-* Model cache
-
-Volumes persist even if containers are recreated.
-
----
-
-# Project Architecture
-
-```
-                +----------------------+
-                |     Evaluator        |
-                +----------+-----------+
-                           |
-                           v
-                +----------------------+
-                | Embedding Pipeline   |
-                +----------+-----------+
-                           |
-                 +---------+---------+
-                 |                   |
-                 v                   v
-         Ollama Embedding      Chroma Vector Store
-              Model                 |
-                                    |
-                              Chroma Database
-```
-
----
-
-# Docker Compose Services
-
-Current services:
-
-* ChromaDB
-* Ollama
-
-Future services:
-
-* Backend
-* Redis (optional)
-
----
-
-# Common Issues
-
-## Chroma not reachable
-
-Verify:
-
-```bash
-docker ps
-```
-
-Ensure Chroma is running on port `8000`.
-
----
-
-## Ollama returns HTTP 500
-
-Check logs:
-
-```bash
-docker logs ollama
-```
-
-Common causes:
-
-* Insufficient Colima memory
-* Model not installed
-* Incorrect model name
-
----
-
-## Model not found
-
-Verify installed models:
-
-```bash
-docker exec -it ollama ollama list
-```
-
----
-
-## Containers are not running
-
-Restart:
-
-```bash
-docker compose up -d
-```
-
----
-
-# Useful Docker Commands
-
-List containers:
-
-```bash
-docker ps
-```
-
-List all containers:
-
-```bash
-docker ps -a
-```
-
-List volumes:
-
-```bash
-docker volume ls
-```
-
-Inspect a volume:
-
-```bash
-docker volume inspect chroma-data
-```
-
-Execute a command inside a container:
-
-```bash
-docker exec -it <container-name> <command>
-```
-
----
-
-# Current Development Roadmap
-
-## ✅ V1
-
-* Chunking
-* Embeddings
-* InMemoryVectorStore
-* Evaluator
-
-## ✅ V2
-
-* ChromaDB
-* Docker
-* Docker Compose
-* Ollama
-* Dedicated Embedding Model
-
-## 🚧 V3
-
-* PDF Extraction
-* Metadata
-* Metadata Filtering
-* Improved Retrieval
-* Better Evaluation
-
-## 📌 Future
-
-* Backend Dockerization
-* Redis
-* Production Configuration
-* Deployment

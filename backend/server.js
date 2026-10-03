@@ -8,14 +8,13 @@ import { validateEnv } from './src/config/validateEnv.js';
 import { getChromaClient } from "./src/config/chromaConfig.js";
 import ChromaVectorStore from "./src/vector-store/chormaVectorStore.js";
 import chunker from "./src/chunker.js";
-import GeminiEmbeddingService from "./src/EmbeddingService/GeminiEmbeddingService.js";
+import ServiceFactory from "./src/config/ServiceFactory.js";
 import EmbeddingPipeline from "./src/EmbeddingPipeline.js";
 import DocumentIngestionService from "./src/IngestionService/DocumentIngestionService.js";
 import PdfExtractor from "./src/PdfExractor/PdfExtractor.js";
 import IngestionApiService from "./src/api/IngestionApiService.js";
 import IngestionController from "./src/controllers/IngestionController.js";
 import createIngestionRoutes from "./src/routes/ingestionRoutes.js";
-import GeminiChatService from "./src/ChatService/GeminiChatService.js";
 import Retriever from "./src/Retriever/Retriever.js";
 import PromptBuilder from "./src/PromptBuilder/PromptBuilder.js";
 import ContextBuilder from "./src/PromptBuilder/ContextBuilder.js";
@@ -81,7 +80,7 @@ const initializeDependencies = async () => {
   const resourceApiService = new ResourceApiService({ resourceStore, kbStore, cleanupJobStore });
   const resourceController = new ResourceController({ resourceApiService });
 
-  const embeddingService = new GeminiEmbeddingService({ apiKey: process.env.GEMINI_API_KEY });
+  const embeddingService = ServiceFactory.createEmbeddingService();
   
   const client = getChromaClient();
   
@@ -112,7 +111,7 @@ const initializeDependencies = async () => {
   });
   const ingestionController = new IngestionController({ ingestionApiService });
 
-  const chatService = new GeminiChatService();
+  const chatService = ServiceFactory.createChatService();
   const retriever = new Retriever({ embeddingService, vectorStore });
   
   // -- Memory System --
