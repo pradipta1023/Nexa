@@ -1,4 +1,4 @@
-import { FAITHFULNESS_PROMPT, RELEVANCE_PROMPT } from './prompts.js';
+import { FAITHFULNESS_PROMPT, RELEVANCE_PROMPT, CORRECTNESS_PROMPT } from './prompts.js';
 import OllamaChatService from '../backend/src/ChatService/OllamaChatService.js';
 
 export default class Evaluator {
@@ -14,8 +14,13 @@ export default class Evaluator {
         return this.#grade(prompt);
     }
 
-    async evaluateRelevance(question, answer) {
-        const prompt = RELEVANCE_PROMPT(question, answer);
+    async evaluateRelevance(question, context, answer) {
+        const prompt = RELEVANCE_PROMPT(question, context, answer);
+        return this.#grade(prompt);
+    }
+
+    async evaluateCorrectness(question, expectedAnswer, answer) {
+        const prompt = CORRECTNESS_PROMPT(question, expectedAnswer, answer);
         return this.#grade(prompt);
     }
 

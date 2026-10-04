@@ -16,5 +16,227 @@
     "resource_text": "Project Phoenix will launch in Q3 2024. The primary goal is to migrate the legacy database to PostgreSQL. The project budget is $1.2 million.",
     "question": "What is the budget for Project Phoenix and when does it launch?",
     "expected_answer": "Project Phoenix has a budget of $1.2 million and will launch in Q3 2024."
+  },
+  {
+    "id": "scenario-4",
+    "resource_text": "The company offers 20 days of paid annual leave and 10 days of paid sick leave per calendar year. Annual leave must be requested at least 5 business days in advance.",
+    "question": "How many days of annual leave do employees receive?",
+    "expected_answer": "Employees receive 20 days of paid annual leave per calendar year."
+  },
+  {
+    "id": "scenario-5",
+    "resource_text": "The Orion laptop has a 14-inch display, 16GB of RAM, and a 512GB SSD. It weighs 1.4 kilograms and is available in silver and black.",
+    "question": "How much RAM does the Orion laptop have?",
+    "expected_answer": "The Orion laptop has 16GB of RAM."
+  },
+  {
+    "id": "scenario-6",
+    "resource_text": "The company cafeteria is open Monday through Friday from 8:00 AM to 6:00 PM. It is closed on weekends and public holidays.",
+    "question": "Is the cafeteria open on Sunday?",
+    "expected_answer": "No. The cafeteria is closed on weekends."
+  },
+  {
+    "id": "scenario-7",
+    "resource_text": "Plan A costs $30 per month and includes 100GB of storage. Plan B costs $50 per month and includes 500GB of storage. Both plans include email support.",
+    "question": "Which plan includes 500GB of storage?",
+    "expected_answer": "Plan B includes 500GB of storage."
+  },
+  {
+    "id": "scenario-8",
+    "resource_text": "The Blue Line train runs from Central Station to Riverside Station. Trains operate every 15 minutes during peak hours and every 30 minutes during off-peak hours.",
+    "question": "How frequently do Blue Line trains run during peak hours?",
+    "expected_answer": "Blue Line trains run every 15 minutes during peak hours."
+  },
+  {
+    "id": "scenario-9",
+    "resource_text": "Employees must submit expense reports within 30 days of the expense. Receipts are required for expenses of $25 or more. Expenses below $25 do not require receipts.",
+    "question": "Do I need a receipt for a $20 expense?",
+    "expected_answer": "No. A receipt is not required for expenses below $25."
+  },
+  {
+    "id": "scenario-10",
+    "resource_text": "The Atlas API supports GET, POST, PUT, and DELETE requests. Authentication is performed using API keys passed in the Authorization header. The API does not currently support OAuth.",
+    "question": "How does authentication work for the Atlas API?",
+    "expected_answer": "Authentication is performed using API keys passed in the Authorization header."
+  },
+  {
+    "id": "scenario-11",
+    "resource_text": "The marketing campaign generated 12,500 impressions and 850 clicks in its first week. The campaign budget was $4,000.",
+    "question": "How many clicks did the campaign generate in its first week?",
+    "expected_answer": "The campaign generated 850 clicks in its first week."
+  },
+  {
+    "id": "scenario-12",
+    "resource_text": "The engineering team has 12 members: 7 backend engineers, 3 frontend engineers, and 2 QA engineers.",
+    "question": "How many frontend engineers are on the engineering team?",
+    "expected_answer": "There are 3 frontend engineers on the engineering team."
+  },
+  {
+    "id": "scenario-13",
+    "resource_text": "Product Alpha launched in January 2024 and Product Beta launched in March 2024. Alpha targets small businesses, while Beta targets enterprise customers.",
+    "question": "Which product launched first?",
+    "expected_answer": "Product Alpha launched first, in January 2024."
+  },
+  {
+    "id": "scenario-14",
+    "resource_text": "The security policy requires passwords to be at least 12 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.",
+    "question": "What are the password requirements?",
+    "expected_answer": "Passwords must be at least 12 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character."
+  },
+  {
+    "id": "scenario-15",
+    "resource_text": "The Nova camera records 4K video at 60 frames per second. It has a 24-megapixel sensor and supports SD cards up to 256GB.",
+    "question": "Can the Nova camera record 4K video?",
+    "expected_answer": "Yes. The Nova camera can record 4K video at 60 frames per second."
+  },
+  {
+    "id": "scenario-16",
+    "resource_text": "The customer support team operates from 9 AM to 9 PM Monday through Saturday. Support is unavailable on Sundays.",
+    "question": "What time does customer support close on Saturday?",
+    "expected_answer": "Customer support closes at 9 PM on Saturday."
+  },
+  {
+    "id": "scenario-17",
+    "resource_text": "The annual conference will take place in Berlin from September 10 to September 12, 2025. Registration opens on June 1, 2025.",
+    "question": "When does registration open for the annual conference?",
+    "expected_answer": "Registration opens on June 1, 2025."
+  },
+  {
+    "id": "scenario-18",
+    "resource_text": "The database backup policy performs a full backup every Sunday and incremental backups Monday through Saturday. Backups are retained for 90 days.",
+    "question": "How long are database backups retained?",
+    "expected_answer": "Database backups are retained for 90 days."
+  },
+  {
+    "id": "scenario-19",
+    "resource_text": "The mobile application supports Android 11 and later and iOS 16 and later. Windows phones are not supported.",
+    "question": "Is the application supported on iOS 15?",
+    "expected_answer": "No. The application supports iOS 16 and later."
+  },
+  {
+    "id": "scenario-20",
+    "resource_text": "The Green plan costs $15 per month and includes 50GB of storage. The Pro plan costs $35 per month and includes 200GB of storage. The Enterprise plan has custom pricing and storage.",
+    "question": "How much does the Pro plan cost and how much storage does it include?",
+    "expected_answer": "The Pro plan costs $35 per month and includes 200GB of storage."
+  },
+  {
+    "id": "scenario-21",
+    "resource_text": "Employees can expense business travel, hotel accommodation, and meals. Personal entertainment expenses are not reimbursable.",
+    "question": "Are hotel expenses reimbursable?",
+    "expected_answer": "Yes. Hotel accommodation is an eligible business expense."
+  },
+  {
+    "id": "scenario-22",
+    "resource_text": "The Red project has a budget of $800,000 and is expected to finish in December 2025. The Blue project has a budget of $1.1 million and is expected to finish in October 2025.",
+    "question": "What is the budget of the Red project?",
+    "expected_answer": "The Red project has a budget of $800,000."
+  },
+  {
+    "id": "scenario-23",
+    "resource_text": "The server has 64GB of RAM, 16 CPU cores, and 2TB of SSD storage. It runs Ubuntu Server 24.04.",
+    "question": "What operating system does the server run?",
+    "expected_answer": "The server runs Ubuntu Server 24.04."
+  },
+  {
+    "id": "scenario-24",
+    "resource_text": "The HR portal allows employees to update their address, emergency contact, and bank account information. Changes to bank account information require HR approval.",
+    "question": "Can employees update their emergency contact information?",
+    "expected_answer": "Yes. Employees can update their emergency contact information through the HR portal."
+  },
+  {
+    "id": "scenario-25",
+    "resource_text": "The warehouse received 2,400 units of Product A and 1,600 units of Product B. Product A is stored in Section 1, while Product B is stored in Section 2.",
+    "question": "How many units were received in total?",
+    "expected_answer": "A total of 4,000 units were received."
+  },
+  {
+    "id": "scenario-26",
+    "resource_text": "The website migration is scheduled for Saturday, August 17, starting at 11 PM. The maintenance window is expected to last two hours.",
+    "question": "How long is the expected maintenance window?",
+    "expected_answer": "The expected maintenance window is two hours."
+  },
+  {
+    "id": "scenario-27",
+    "resource_text": "The library has 50,000 books. Of these, 12,000 are available as digital editions. The remaining books are available only in physical form.",
+    "question": "How many books are available only in physical form?",
+    "expected_answer": "38,000 books are available only in physical form."
+  },
+  {
+    "id": "scenario-28",
+    "resource_text": "The API rate limit is 100 requests per minute for standard accounts and 1,000 requests per minute for enterprise accounts.",
+    "question": "What is the API rate limit for a standard account?",
+    "expected_answer": "The API rate limit for a standard account is 100 requests per minute."
+  },
+  {
+    "id": "scenario-29",
+    "resource_text": "The training program consists of three modules: Security Basics, Data Privacy, and Incident Response. Each module takes approximately two hours to complete.",
+    "question": "How many modules are included in the training program?",
+    "expected_answer": "The training program includes three modules."
+  },
+  {
+    "id": "scenario-30",
+    "resource_text": "The company introduced a four-day workweek pilot for the design team. The pilot runs from July through September 2025. Employees work Monday through Thursday during the pilot.",
+    "question": "Which days does the design team work during the four-day workweek pilot?",
+    "expected_answer": "The design team works Monday through Thursday during the pilot."
+  },
+  {
+    "id": "scenario-31",
+    "resource_text": "The payment service accepts Visa and Mastercard credit cards. It also accepts bank transfers. American Express is not currently supported.",
+    "question": "Does the payment service support American Express?",
+    "expected_answer": "No. American Express is not currently supported."
+  },
+  {
+    "id": "scenario-32",
+    "resource_text": "The research project has three objectives: improve battery efficiency, reduce manufacturing costs, and increase device durability. The project is funded for $750,000.",
+    "question": "What are the objectives of the research project?",
+    "expected_answer": "The objectives are to improve battery efficiency, reduce manufacturing costs, and increase device durability."
+  },
+  {
+    "id": "scenario-33",
+    "resource_text": "The company has offices in London, Toronto, and Singapore. The London office has 120 employees, Toronto has 80, and Singapore has 50.",
+    "question": "How many employees work in the Toronto office?",
+    "expected_answer": "The Toronto office has 80 employees."
+  },
+  {
+    "id": "scenario-34",
+    "resource_text": "The data export feature supports CSV and JSON formats. XML export is not available. Exports are limited to 10,000 records per request.",
+    "question": "What export formats are supported?",
+    "expected_answer": "The data export feature supports CSV and JSON formats."
+  },
+  {
+    "id": "scenario-35",
+    "resource_text": "The Alpha subscription is billed monthly at $12. The Beta subscription is billed annually at $120. Both subscriptions provide access to the standard feature set.",
+    "question": "How much does the Alpha subscription cost per month?",
+    "expected_answer": "The Alpha subscription costs $12 per month."
+  },
+  {
+    "id": "scenario-36",
+    "resource_text": "The delivery service operates in New York, Boston, and Philadelphia. Same-day delivery is available only in New York. Standard delivery is available in all three cities.",
+    "question": "Is same-day delivery available in Boston?",
+    "expected_answer": "No. Same-day delivery is available only in New York."
+  },
+  {
+    "id": "scenario-37",
+    "resource_text": "The internal dashboard displays sales revenue, customer count, conversion rate, and monthly recurring revenue. It refreshes automatically every 30 minutes.",
+    "question": "How often does the internal dashboard refresh?",
+    "expected_answer": "The internal dashboard refreshes every 30 minutes."
+  },
+  {
+    "id": "scenario-38",
+    "resource_text": "The employee wellness program provides access to fitness classes, meditation sessions, and nutritional consultations. Employees can participate in up to two activities per week.",
+    "question": "How many wellness activities can an employee participate in per week?",
+    "expected_answer": "An employee can participate in up to two wellness activities per week."
+  },
+  {
+    "id": "scenario-39",
+    "resource_text": "The Orion deployment has two stages: staging and production. Code must remain in staging for at least 24 hours before it can be deployed to production. Production deployments require approval from the release manager.",
+    "question": "What is required before code can be deployed to production?",
+    "expected_answer": "Code must remain in staging for at least 24 hours, and production deployment requires approval from the release manager."
+  },
+  {
+    "id": "scenario-40",
+    "resource_text": "The customer refund policy allows refunds within 30 days of purchase. Refunds are issued to the original payment method. Digital gift cards are non-refundable.",
+    "question": "Can a digital gift card be refunded?",
+    "expected_answer": "No. Digital gift cards are non-refundable."
   }
 ]

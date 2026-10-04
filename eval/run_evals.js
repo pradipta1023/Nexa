@@ -36,7 +36,7 @@ async function runEvaluations() {
 
     // 1. Connect and clean up databases
     console.log("🧹 Connecting to databases and wiping old eval data...");
-    const mongoDb = new MongoDatabase(process.env.MONGO_URI);
+    const mongoDb = new MongoDatabase(process.env.MONGO_URI, "nexa_eval_db");
     await mongoDb.connect();
     await mongoDb.db.dropDatabase(); // Start fresh
 
@@ -99,7 +99,12 @@ async function runEvaluations() {
         
         // Setup dummy resource in DB
         const kbId = `kb-${data.id}`;
-        const resourceId = await resourceStore.create(kbId, "dummy.txt", "txt");
+        const resource = await resourceStore.create({
+            knowledgeBaseId: kbId,
+            name: "dummy.txt",
+            type: "text"
+        });
+        const resourceId = resource.id;
 
         // Ingest the text
         console.log(`📥 Ingesting resource text...`);
@@ -127,21 +132,38 @@ async function runEvaluations() {
         // Evaluate using Qwen3
         console.log(`⚖️ Grading with Qwen3...`);
         const faithfulnessResult = await evaluator.evaluateFaithfulness(data.question, contextStr, answer);
-        const relevanceResult = await evaluator.evaluateRelevance(data.question, answer);
+        const relevanceResult = await evaluator.evaluateRelevance(data.question, contextStr, answer);
+        const correctnessResult = await evaluator.evaluateCorrectness(data.question, data.expected_answer, answer);
 
         console.log(`↳ Faithfulness: ${faithfulnessResult.score}/5 (${faithfulnessResult.reasoning})`);
         console.log(`↳ Relevance:    ${relevanceResult.score}/5 (${relevanceResult.reasoning})`);
+        console.log(`↳ Correctness:  ${correctnessResult.score}/5 (${correctnessResult.reasoning})`);
 
         results.push({
             id: data.id,
             faithfulness: faithfulnessResult.score,
-            relevance: relevanceResult.score
+            relevance: relevanceResult.score,
+            correctness: correctnessResult.score
         });
     }
 
     // 5. Output Summary and Teardown
     console.log("\n=================================================");
     console.log("📊 EVALUATION RESULTS");
+    
+    if (results.length > 0) {
+        const totalFaithfulness = results.reduce((sum, r) => sum + r.faithfulness, 0);
+        const totalRelevance = results.reduce((sum, r) => sum + r.relevance, 0);
+        const totalCorrectness = results.reduce((sum, r) => sum + r.correctness, 0);
+        
+        results.push({
+            id: "AVERAGE",
+            faithfulness: parseFloat((totalFaithfulness / (results.length)).toFixed(2)),
+            relevance: parseFloat((totalRelevance / (results.length)).toFixed(2)),
+            correctness: parseFloat((totalCorrectness / (results.length)).toFixed(2))
+        });
+    }
+
     console.table(results);
 
     console.log("🧹 Tearing down and cleaning databases...");
