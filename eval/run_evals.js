@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { checkbox } from '@inquirer/prompts';
 
 // Force environment variables for safe local eval
 process.env.AI_PROVIDER = 'local';
@@ -25,7 +26,10 @@ import MongoConversationStore from "../backend/src/Conversation/MongoConversatio
 import ConversationRetriever from "../backend/src/Conversation/ConversationRetriever.js";
 import QueryPipeline from "../backend/src/QueryPipeline/QueryPipeline.js";
 import MongoResourceStore from "../backend/src/KnowledgeBase/MongoResourceStore.js";
+
+// Eval components
 import Evaluator from "./Evaluator.js";
+import metricRunners from "./metricRunners.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -99,7 +103,7 @@ const ingestScenarioData = async (data, ingestionService, resourceStore) => {
     return resource.id;
 };
 
-const evaluateScenario = async (data, resourceId, queryPipeline, evaluator) => {
+const evaluateScenario = async (data, resourceId, queryPipeline, evaluator, selectedMetrics) => {
     console.log(`🤖 Generating RAG answer with Llama3...`);
     const { answer, retrievedChunks } = await queryPipeline.ask({
         question: data.question,
@@ -112,52 +116,37 @@ const evaluateScenario = async (data, resourceId, queryPipeline, evaluator) => {
     const rankedChunksStr = retrievedChunks.map((c, i) => `[CHUNK ${i + 1}]:\n${c.text}`).join('\n\n');
 
     console.log(`⚖️ Grading with Qwen3...`);
-    const ctxRelevanceResult = await evaluator.evaluateContextRelevance(data.question, contextStr);
-    const ctxRecallResult = await evaluator.evaluateContextRecall(data.question, data.expected_answer, contextStr);
-    const ctxPrecisionResult = await evaluator.evaluateContextPrecision(data.question, rankedChunksStr);
-    const faithfulnessResult = await evaluator.evaluateFaithfulness(data.question, contextStr, answer);
-    const relevanceResult = await evaluator.evaluateRelevance(data.question, contextStr, answer);
-    const correctnessResult = await evaluator.evaluateCorrectness(data.question, data.expected_answer, answer);
-
-    console.log(`↳ Ctx Relevance: ${ctxRelevanceResult.score}/5 (${ctxRelevanceResult.reasoning})`);
-    console.log(`↳ Ctx Recall:    ${ctxRecallResult.score}/5 (${ctxRecallResult.reasoning})`);
-    console.log(`↳ Ctx Precision: ${ctxPrecisionResult.score}/5 (${ctxPrecisionResult.reasoning})`);
-    console.log(`↳ Faithfulness:  ${faithfulnessResult.score}/5 (${faithfulnessResult.reasoning})`);
-    console.log(`↳ Relevance:     ${relevanceResult.score}/5 (${relevanceResult.reasoning})`);
-    console.log(`↳ Correctness:   ${correctnessResult.score}/5 (${correctnessResult.reasoning})`);
-
-    return {
-        id: data.id,
-        ctx_relevance: ctxRelevanceResult.score,
-        ctx_recall: ctxRecallResult.score,
-        ctx_precision: ctxPrecisionResult.score,
-        faithfulness: faithfulnessResult.score,
-        relevance: relevanceResult.score,
-        correctness: correctnessResult.score
+    const resultObj = { id: data.id };
+    
+    const params = {
+        evaluator,
+        question: data.question,
+        expectedAnswer: data.expected_answer,
+        contextStr,
+        rankedChunksStr,
+        answer
     };
+
+    for (const metric of selectedMetrics) {
+        if (metricRunners[metric]) {
+            resultObj[metric] = await metricRunners[metric](params);
+        }
+    }
+
+    return resultObj;
 };
 
-const printResults = (results) => {
+const printResults = (results, selectedMetrics) => {
     console.log("\n=================================================");
     console.log("📊 EVALUATION RESULTS");
     
     if (results.length > 0) {
-        const totalCtxRel = results.reduce((sum, r) => sum + r.ctx_relevance, 0);
-        const totalCtxRec = results.reduce((sum, r) => sum + r.ctx_recall, 0);
-        const totalCtxPrec = results.reduce((sum, r) => sum + r.ctx_precision, 0);
-        const totalFaithfulness = results.reduce((sum, r) => sum + r.faithfulness, 0);
-        const totalRelevance = results.reduce((sum, r) => sum + r.relevance, 0);
-        const totalCorrectness = results.reduce((sum, r) => sum + r.correctness, 0);
-        
-        results.push({
-            id: "AVERAGE",
-            ctx_relevance: parseFloat((totalCtxRel / results.length).toFixed(2)),
-            ctx_recall: parseFloat((totalCtxRec / results.length).toFixed(2)),
-            ctx_precision: parseFloat((totalCtxPrec / results.length).toFixed(2)),
-            faithfulness: parseFloat((totalFaithfulness / results.length).toFixed(2)),
-            relevance: parseFloat((totalRelevance / results.length).toFixed(2)),
-            correctness: parseFloat((totalCorrectness / results.length).toFixed(2))
-        });
+        const avgRow = { id: "AVERAGE" };
+        for (const metric of selectedMetrics) {
+            const total = results.reduce((sum, r) => sum + r[metric], 0);
+            avgRow[metric] = parseFloat((total / results.length).toFixed(2));
+        }
+        results.push(avgRow);
     }
 
     console.table(results);
@@ -173,7 +162,24 @@ const teardownDatabases = async (mongoDb, client) => {
 
 const runEvaluations = async () => {
     console.log("🚀 Starting RAG Evaluation Pipeline (Local Mode)");
-    console.log("=================================================");
+    console.log("=================================================\n");
+
+    const selectedMetrics = await checkbox({
+        message: 'Which metrics do you want to run?',
+        choices: [
+            { name: 'Context Relevance (Precision)', value: 'ctx_relevance', checked: true },
+            { name: 'Context Recall (Completeness)', value: 'ctx_recall', checked: true },
+            { name: 'Context Precision (Ranking)', value: 'ctx_precision', checked: true },
+            { name: 'Faithfulness (Hallucinations)', value: 'faithfulness', checked: true },
+            { name: 'Answer Relevance', value: 'relevance', checked: true },
+            { name: 'Answer Correctness', value: 'correctness', checked: true }
+        ]
+    });
+
+    if (selectedMetrics.length === 0) {
+        console.log("⚠️  No metrics selected. Exiting.");
+        process.exit(0);
+    }
 
     const { mongoDb, client, collection, memoryCollection } = await setupDatabases();
     const { ingestionService, queryPipeline, resourceStore, evaluator } = setupDependencies(mongoDb, collection, memoryCollection);
@@ -186,12 +192,12 @@ const runEvaluations = async () => {
         console.log(`Question: ${data.question}`);
         
         const resourceId = await ingestScenarioData(data, ingestionService, resourceStore);
-        const scenarioResult = await evaluateScenario(data, resourceId, queryPipeline, evaluator);
+        const scenarioResult = await evaluateScenario(data, resourceId, queryPipeline, evaluator, selectedMetrics);
         
         results.push(scenarioResult);
     }
 
-    printResults(results);
+    printResults(results, selectedMetrics);
     await teardownDatabases(mongoDb, client);
     
     console.log("✅ Done!");
