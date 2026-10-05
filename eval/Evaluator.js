@@ -3,7 +3,8 @@ import {
     RELEVANCE_PROMPT, 
     CORRECTNESS_PROMPT,
     CONTEXT_RELEVANCE_PROMPT,
-    CONTEXT_RECALL_PROMPT
+    CONTEXT_RECALL_PROMPT,
+    CONTEXT_PRECISION_PROMPT
 } from './prompts.js';
 import OllamaChatService from '../backend/src/ChatService/OllamaChatService.js';
 
@@ -37,6 +38,11 @@ export default class Evaluator {
 
     evaluateContextRecall = async (question, expectedAnswer, context) => {
         const prompt = CONTEXT_RECALL_PROMPT(question, expectedAnswer, context);
+        return this.#grade(prompt);
+    };
+
+    evaluateContextPrecision = async (question, rankedChunksStr) => {
+        const prompt = CONTEXT_PRECISION_PROMPT(question, rankedChunksStr);
         return this.#grade(prompt);
     };
 

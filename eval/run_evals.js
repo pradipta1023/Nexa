@@ -109,16 +109,19 @@ const evaluateScenario = async (data, resourceId, queryPipeline, evaluator) => {
     });
 
     const contextStr = retrievedChunks.map(c => c.text).join('\n\n');
+    const rankedChunksStr = retrievedChunks.map((c, i) => `[CHUNK ${i + 1}]:\n${c.text}`).join('\n\n');
 
     console.log(`⚖️ Grading with Qwen3...`);
     const ctxRelevanceResult = await evaluator.evaluateContextRelevance(data.question, contextStr);
     const ctxRecallResult = await evaluator.evaluateContextRecall(data.question, data.expected_answer, contextStr);
+    const ctxPrecisionResult = await evaluator.evaluateContextPrecision(data.question, rankedChunksStr);
     const faithfulnessResult = await evaluator.evaluateFaithfulness(data.question, contextStr, answer);
     const relevanceResult = await evaluator.evaluateRelevance(data.question, contextStr, answer);
     const correctnessResult = await evaluator.evaluateCorrectness(data.question, data.expected_answer, answer);
 
     console.log(`↳ Ctx Relevance: ${ctxRelevanceResult.score}/5 (${ctxRelevanceResult.reasoning})`);
     console.log(`↳ Ctx Recall:    ${ctxRecallResult.score}/5 (${ctxRecallResult.reasoning})`);
+    console.log(`↳ Ctx Precision: ${ctxPrecisionResult.score}/5 (${ctxPrecisionResult.reasoning})`);
     console.log(`↳ Faithfulness:  ${faithfulnessResult.score}/5 (${faithfulnessResult.reasoning})`);
     console.log(`↳ Relevance:     ${relevanceResult.score}/5 (${relevanceResult.reasoning})`);
     console.log(`↳ Correctness:   ${correctnessResult.score}/5 (${correctnessResult.reasoning})`);
@@ -127,6 +130,7 @@ const evaluateScenario = async (data, resourceId, queryPipeline, evaluator) => {
         id: data.id,
         ctx_relevance: ctxRelevanceResult.score,
         ctx_recall: ctxRecallResult.score,
+        ctx_precision: ctxPrecisionResult.score,
         faithfulness: faithfulnessResult.score,
         relevance: relevanceResult.score,
         correctness: correctnessResult.score
@@ -140,6 +144,7 @@ const printResults = (results) => {
     if (results.length > 0) {
         const totalCtxRel = results.reduce((sum, r) => sum + r.ctx_relevance, 0);
         const totalCtxRec = results.reduce((sum, r) => sum + r.ctx_recall, 0);
+        const totalCtxPrec = results.reduce((sum, r) => sum + r.ctx_precision, 0);
         const totalFaithfulness = results.reduce((sum, r) => sum + r.faithfulness, 0);
         const totalRelevance = results.reduce((sum, r) => sum + r.relevance, 0);
         const totalCorrectness = results.reduce((sum, r) => sum + r.correctness, 0);
@@ -148,6 +153,7 @@ const printResults = (results) => {
             id: "AVERAGE",
             ctx_relevance: parseFloat((totalCtxRel / results.length).toFixed(2)),
             ctx_recall: parseFloat((totalCtxRec / results.length).toFixed(2)),
+            ctx_precision: parseFloat((totalCtxPrec / results.length).toFixed(2)),
             faithfulness: parseFloat((totalFaithfulness / results.length).toFixed(2)),
             relevance: parseFloat((totalRelevance / results.length).toFixed(2)),
             correctness: parseFloat((totalCorrectness / results.length).toFixed(2))

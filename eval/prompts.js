@@ -81,3 +81,21 @@ Instructions:
 5. Provide your response as a valid JSON object with exactly two keys: "score" (an integer from 1 to 5) and "reasoning" (a brief string explaining why).
 
 Output strictly valid JSON and nothing else.`;
+
+
+export const CONTEXT_PRECISION_PROMPT = (question, rankedChunks) => `You are an impartial expert evaluator for an AI system.
+Your task is to evaluate the CONTEXT PRECISION (Ranking Quality) of a retrieval system.
+
+QUESTION: ${question}
+RANKED CHUNKS:
+${rankedChunks}
+
+Instructions:
+1. The chunks above are presented in the exact order they were ranked by the database (Chunk 1 is the highest rank).
+2. Identify which chunk(s) contain the information required to fully answer the QUESTION.
+3. If the most highly relevant information is found at the very top (Chunk 1), give a high score (max 5).
+4. If the relevant information is buried in the lower chunks (e.g., Chunk 4 or 5) while irrelevant chunks are ranked higher, give a low score (e.g., 1 or 2).
+5. If none of the chunks contain relevant information, score it a 1.
+6. Provide your response as a valid JSON object with exactly two keys: "score" (an integer from 1 to 5) and "reasoning" (a brief string explaining why).
+
+Output strictly valid JSON and nothing else.`;
