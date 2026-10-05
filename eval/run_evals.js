@@ -30,29 +30,23 @@ import Evaluator from "./Evaluator.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-async function runEvaluations() {
-    console.log("🚀 Starting RAG Evaluation Pipeline (Local Mode)");
-    console.log("=================================================");
-
-    // 1. Connect and clean up databases
+const setupDatabases = async () => {
     console.log("🧹 Connecting to databases and wiping old eval data...");
     const mongoDb = new MongoDatabase(process.env.MONGO_URI, "nexa_eval_db");
     await mongoDb.connect();
     await mongoDb.db.dropDatabase(); // Start fresh
 
     const client = getChromaClient();
-    try {
-        await client.deleteCollection({ name: "eval_KnowledgeBases" });
-    } catch (e) { /* Ignore if it doesn't exist */ }
+    try { await client.deleteCollection({ name: "eval_KnowledgeBases" }); } catch (e) { /* Ignore */ }
     const collection = await client.getOrCreateCollection({ name: "eval_KnowledgeBases", embeddingFunction: null });
     
-    // Memory store (needed for pipeline)
-    try {
-        await client.deleteCollection({ name: "eval_conversationMemory" });
-    } catch (e) { /* Ignore */ }
+    try { await client.deleteCollection({ name: "eval_conversationMemory" }); } catch (e) { /* Ignore */ }
     const memoryCollection = await client.getOrCreateCollection({ name: "eval_conversationMemory", embeddingFunction: null });
 
-    // 2. Initialize Backend Dependencies
+    return { mongoDb, client, collection, memoryCollection };
+};
+
+const setupDependencies = (mongoDb, collection, memoryCollection) => {
     console.log("⚙️ Initializing backend dependencies...");
     const vectorStore = new ChromaVectorStore({ collection });
     const memoryVectorStore = new ChromaVectorStore({ collection: memoryCollection });
@@ -61,118 +55,141 @@ async function runEvaluations() {
     
     const embeddingService = ServiceFactory.createEmbeddingService();
     const chatService = ServiceFactory.createChatService(); // llama3
-    
     const embeddingPipeline = new EmbeddingPipeline({ embeddingService });
-    const pdfExtractor = new PdfExtractor();
     
     const ingestionService = new DocumentIngestionService({
-        pdfExtractor, chunker, embeddingPipeline, vectorStore, resourceStore
+        pdfExtractor: new PdfExtractor(), chunker, embeddingPipeline, vectorStore, resourceStore
     });
     
     const retriever = new Retriever({ embeddingService, vectorStore });
     const conversationRetriever = new ConversationRetriever({ embeddingService, conversationMemoryStore: memoryVectorStore });
     
-    const tokenizer = new Tokenizer();
-    const contextBuilder = new ContextBuilder({ tokenizer });
+    const contextBuilder = new ContextBuilder({ tokenizer: new Tokenizer() });
     const promptBuilder = new PromptBuilder({ contextBuilder });
 
     const queryPipeline = new QueryPipeline({ 
-        retriever, 
-        chatService, 
-        promptBuilder,
-        conversationRetriever,
-        conversationStore
+        retriever, chatService, promptBuilder, conversationRetriever, conversationStore 
     });
 
-    const evaluator = new Evaluator(); // qwen3:14b
+    return { ingestionService, queryPipeline, resourceStore, evaluator: new Evaluator() };
+};
 
-    // 3. Load Dataset
+const loadDataset = () => {
     const datasetPath = path.join(__dirname, 'dataset.json');
-    const dataset = JSON.parse(fs.readFileSync(datasetPath, 'utf8'));
+    return JSON.parse(fs.readFileSync(datasetPath, 'utf8'));
+};
 
-    const results = [];
+const ingestScenarioData = async (data, ingestionService, resourceStore) => {
+    console.log(`📥 Ingesting resource text...`);
+    const kbId = `kb-${data.id}`;
+    const resource = await resourceStore.create({
+        knowledgeBaseId: kbId,
+        name: "dummy.txt",
+        type: "text"
+    });
 
-    // 4. Run Evals
-    for (const data of dataset) {
-        console.log(`\n\n--- Evaluating: ${data.id} ---`);
-        console.log(`Question: ${data.question}`);
-        
-        // Setup dummy resource in DB
-        const kbId = `kb-${data.id}`;
-        const resource = await resourceStore.create({
-            knowledgeBaseId: kbId,
-            name: "dummy.txt",
-            type: "text"
-        });
-        const resourceId = resource.id;
+    await ingestionService.ingestText({
+        text: data.resource_text,
+        metadata: {},
+        knowledgeBaseId: kbId,
+        resourceId: resource.id,
+        ingestionVersion: 1
+    });
 
-        // Ingest the text
-        console.log(`📥 Ingesting resource text...`);
-        await ingestionService.ingestText({
-            text: data.resource_text,
-            metadata: {},
-            knowledgeBaseId: kbId,
-            resourceId,
-            ingestionVersion: 1
-        });
+    return resource.id;
+};
 
-        // Run the query pipeline
-        console.log(`🤖 Generating RAG answer with Llama3...`);
-        const { answer, retrievedChunks } = await queryPipeline.ask({
-            question: data.question,
-            conversationId: `conv-${data.id}`,
-            resourceIds: [resourceId],
-            topK: 5
-        });
+const evaluateScenario = async (data, resourceId, queryPipeline, evaluator) => {
+    console.log(`🤖 Generating RAG answer with Llama3...`);
+    const { answer, retrievedChunks } = await queryPipeline.ask({
+        question: data.question,
+        conversationId: `conv-${data.id}`,
+        resourceIds: [resourceId],
+        topK: 5
+    });
 
-        console.log(`Answer: ${answer}`);
-        
-        const contextStr = retrievedChunks.map(c => c.text).join('\n\n');
+    const contextStr = retrievedChunks.map(c => c.text).join('\n\n');
 
-        // Evaluate using Qwen3
-        console.log(`⚖️ Grading with Qwen3...`);
-        const faithfulnessResult = await evaluator.evaluateFaithfulness(data.question, contextStr, answer);
-        const relevanceResult = await evaluator.evaluateRelevance(data.question, contextStr, answer);
-        const correctnessResult = await evaluator.evaluateCorrectness(data.question, data.expected_answer, answer);
+    console.log(`⚖️ Grading with Qwen3...`);
+    const ctxRelevanceResult = await evaluator.evaluateContextRelevance(data.question, contextStr);
+    const ctxRecallResult = await evaluator.evaluateContextRecall(data.question, data.expected_answer, contextStr);
+    const faithfulnessResult = await evaluator.evaluateFaithfulness(data.question, contextStr, answer);
+    const relevanceResult = await evaluator.evaluateRelevance(data.question, contextStr, answer);
+    const correctnessResult = await evaluator.evaluateCorrectness(data.question, data.expected_answer, answer);
 
-        console.log(`↳ Faithfulness: ${faithfulnessResult.score}/5 (${faithfulnessResult.reasoning})`);
-        console.log(`↳ Relevance:    ${relevanceResult.score}/5 (${relevanceResult.reasoning})`);
-        console.log(`↳ Correctness:  ${correctnessResult.score}/5 (${correctnessResult.reasoning})`);
+    console.log(`↳ Ctx Relevance: ${ctxRelevanceResult.score}/5 (${ctxRelevanceResult.reasoning})`);
+    console.log(`↳ Ctx Recall:    ${ctxRecallResult.score}/5 (${ctxRecallResult.reasoning})`);
+    console.log(`↳ Faithfulness:  ${faithfulnessResult.score}/5 (${faithfulnessResult.reasoning})`);
+    console.log(`↳ Relevance:     ${relevanceResult.score}/5 (${relevanceResult.reasoning})`);
+    console.log(`↳ Correctness:   ${correctnessResult.score}/5 (${correctnessResult.reasoning})`);
 
-        results.push({
-            id: data.id,
-            faithfulness: faithfulnessResult.score,
-            relevance: relevanceResult.score,
-            correctness: correctnessResult.score
-        });
-    }
+    return {
+        id: data.id,
+        ctx_relevance: ctxRelevanceResult.score,
+        ctx_recall: ctxRecallResult.score,
+        faithfulness: faithfulnessResult.score,
+        relevance: relevanceResult.score,
+        correctness: correctnessResult.score
+    };
+};
 
-    // 5. Output Summary and Teardown
+const printResults = (results) => {
     console.log("\n=================================================");
     console.log("📊 EVALUATION RESULTS");
     
     if (results.length > 0) {
+        const totalCtxRel = results.reduce((sum, r) => sum + r.ctx_relevance, 0);
+        const totalCtxRec = results.reduce((sum, r) => sum + r.ctx_recall, 0);
         const totalFaithfulness = results.reduce((sum, r) => sum + r.faithfulness, 0);
         const totalRelevance = results.reduce((sum, r) => sum + r.relevance, 0);
         const totalCorrectness = results.reduce((sum, r) => sum + r.correctness, 0);
         
         results.push({
             id: "AVERAGE",
-            faithfulness: parseFloat((totalFaithfulness / (results.length)).toFixed(2)),
-            relevance: parseFloat((totalRelevance / (results.length)).toFixed(2)),
-            correctness: parseFloat((totalCorrectness / (results.length)).toFixed(2))
+            ctx_relevance: parseFloat((totalCtxRel / results.length).toFixed(2)),
+            ctx_recall: parseFloat((totalCtxRec / results.length).toFixed(2)),
+            faithfulness: parseFloat((totalFaithfulness / results.length).toFixed(2)),
+            relevance: parseFloat((totalRelevance / results.length).toFixed(2)),
+            correctness: parseFloat((totalCorrectness / results.length).toFixed(2))
         });
     }
 
     console.table(results);
+};
 
+const teardownDatabases = async (mongoDb, client) => {
     console.log("🧹 Tearing down and cleaning databases...");
     await mongoDb.db.dropDatabase();
     await client.deleteCollection({ name: "eval_KnowledgeBases" });
     await client.deleteCollection({ name: "eval_conversationMemory" });
+    await mongoDb.disconnect();
+};
+
+const runEvaluations = async () => {
+    console.log("🚀 Starting RAG Evaluation Pipeline (Local Mode)");
+    console.log("=================================================");
+
+    const { mongoDb, client, collection, memoryCollection } = await setupDatabases();
+    const { ingestionService, queryPipeline, resourceStore, evaluator } = setupDependencies(mongoDb, collection, memoryCollection);
+    
+    const dataset = loadDataset();
+    const results = [];
+
+    for (const data of dataset) {
+        console.log(`\n\n--- Evaluating: ${data.id} ---`);
+        console.log(`Question: ${data.question}`);
+        
+        const resourceId = await ingestScenarioData(data, ingestionService, resourceStore);
+        const scenarioResult = await evaluateScenario(data, resourceId, queryPipeline, evaluator);
+        
+        results.push(scenarioResult);
+    }
+
+    printResults(results);
+    await teardownDatabases(mongoDb, client);
     
     console.log("✅ Done!");
     process.exit(0);
-}
+};
 
 runEvaluations().catch(console.error);

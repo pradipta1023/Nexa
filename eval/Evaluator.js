@@ -1,4 +1,10 @@
-import { FAITHFULNESS_PROMPT, RELEVANCE_PROMPT, CORRECTNESS_PROMPT } from './prompts.js';
+import { 
+    FAITHFULNESS_PROMPT, 
+    RELEVANCE_PROMPT, 
+    CORRECTNESS_PROMPT,
+    CONTEXT_RELEVANCE_PROMPT,
+    CONTEXT_RECALL_PROMPT
+} from './prompts.js';
 import OllamaChatService from '../backend/src/ChatService/OllamaChatService.js';
 
 export default class Evaluator {
@@ -9,22 +15,32 @@ export default class Evaluator {
         this.chatService = new OllamaChatService({ baseUrl: 'http://localhost:11434' });
     }
 
-    async evaluateFaithfulness(question, context, answer) {
+    evaluateFaithfulness = async (question, context, answer) => {
         const prompt = FAITHFULNESS_PROMPT(question, context, answer);
         return this.#grade(prompt);
-    }
+    };
 
-    async evaluateRelevance(question, context, answer) {
+    evaluateRelevance = async (question, context, answer) => {
         const prompt = RELEVANCE_PROMPT(question, context, answer);
         return this.#grade(prompt);
-    }
+    };
 
-    async evaluateCorrectness(question, expectedAnswer, answer) {
+    evaluateCorrectness = async (question, expectedAnswer, answer) => {
         const prompt = CORRECTNESS_PROMPT(question, expectedAnswer, answer);
         return this.#grade(prompt);
-    }
+    };
 
-    async #grade(prompt) {
+    evaluateContextRelevance = async (question, context) => {
+        const prompt = CONTEXT_RELEVANCE_PROMPT(question, context);
+        return this.#grade(prompt);
+    };
+
+    evaluateContextRecall = async (question, expectedAnswer, context) => {
+        const prompt = CONTEXT_RECALL_PROMPT(question, expectedAnswer, context);
+        return this.#grade(prompt);
+    };
+
+    #grade = async (prompt) => {
         try {
             const responseText = await this.chatService.generate({
                 prompt: prompt,
@@ -36,9 +52,9 @@ export default class Evaluator {
             console.error("[Evaluator] Failed to grade:", error.message);
             return { score: 0, reasoning: "Evaluation failed." };
         }
-    }
+    };
 
-    #parseJsonResponse(text) {
+    #parseJsonResponse = (text) => {
         try {
             // Qwen3 might wrap JSON in markdown block ```json ... ```
             // This safely strips the formatting before parsing
@@ -58,5 +74,5 @@ export default class Evaluator {
             console.error("[Evaluator] Failed to parse JSON from LLM. Raw output:", text);
             return { score: 0, reasoning: "Failed to parse judge output." };
         }
-    }
+    };
 }
